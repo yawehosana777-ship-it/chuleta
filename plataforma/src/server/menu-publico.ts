@@ -7,6 +7,15 @@ import { clientePublico } from "@/lib/supabase/publico";
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+/** Slugs de los restaurantes activos, para preparar sus menús por adelantado. */
+export async function listarSlugsPublicos(): Promise<string[]> {
+  "use cache";
+  cacheLife("minutes");
+  const { data, error } = await clientePublico().from("restaurants").select("slug").eq("status", "active");
+  if (error) throw new Error(`No se pudieron listar los restaurantes: ${error.message}`);
+  return (data ?? []).map((r) => r.slug).filter((s) => SLUG.test(s));
+}
+
 /** Etiqueta de caché: el panel (Fase 3) la invalidará al editar el menú. */
 export const etiquetaMenu = (slug: string) => `menu:${slug}`;
 

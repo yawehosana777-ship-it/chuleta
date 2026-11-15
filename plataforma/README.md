@@ -46,7 +46,12 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
 - Se lee con un cliente **anónimo** (sin sesión), así el dueño ve exactamente lo mismo que un cliente.
+- Los menús de restaurantes activos se preparan completos al compilar (`generateStaticParams`) y se
+  renuevan solos: el HTML llega con el menú, sin pantalla de carga intermedia.
 - Caché de ~1 minuto: un cambio en la base (precio, agotado, nombre) aparece solo, sin volver a publicar.
+- Lighthouse móvil (producción en localhost, nov-2026): Accesibilidad 100 · Buenas prácticas 100 · SEO 100 ·
+  Rendimiento 89–90 (simulado) / 91–92 (limitación real). Para medir:
+  `npm run build`, `npx next start -p 3001` y `npx lighthouse http://localhost:3001/r/don-chuleta --form-factor=mobile`.
   En la Fase 3 el panel invalidará la caché al guardar (`etiquetaMenu` en `src/server/menu-publico.ts`).
 - Imágenes: por ahora las de Don Chuleta viven en `public/menus/don-chuleta/`. Las rutas que no empiezan
   con `/` se leen del bucket público `menu` de Supabase Storage (se crea en la Fase 3 para que el dueño suba fotos).

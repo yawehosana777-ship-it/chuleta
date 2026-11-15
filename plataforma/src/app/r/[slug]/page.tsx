@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import { Cargando } from "@/components/ui/cargando";
 import { VistaMenu } from "@/components/menu/vista-menu";
-import { obtenerMenuPublico } from "@/server/menu-publico";
+import { listarSlugsPublicos, obtenerMenuPublico } from "@/server/menu-publico";
+
+// Los menús de los restaurantes activos se preparan completos por adelantado
+// (HTML listo, sin pantalla de carga) y se renuevan solos cada ~1 minuto.
+// Un restaurante nuevo se prepara en su primera visita.
+export async function generateStaticParams() {
+  return (await listarSlugsPublicos()).map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({ params }: PageProps<"/r/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -12,20 +17,17 @@ export async function generateMetadata({ params }: PageProps<"/r/[slug]">): Prom
   const r = menu.restaurante;
   return {
     title: { absolute: `${r.nombre} · Menú` },
-    description: [r.descripcion, r.direccion].filter(Boolean).join(" · ") || `Menú digital de ${r.nombre}`,
+    description: [`Menú digital de ${r.nombre}`, r.descripcion, r.direccion].filter(Boolean).join(" · "),
     openGraph: r.portada ? { images: [r.portada] } : undefined,
   };
 }
 
-export default function PaginaMenu({ params }: PageProps<"/r/[slug]">) {
-  return (
-    <Suspense fallback={<Cargando texto="Cargando el menú…" />}>
-      <Menu params={params} />
-    </Suspense>
-  );
-}
+// Sin <Suspense>: el HTML llega con el menú completo (sin pantalla de carga
+// intermedia). Un restaurante que aún no esté preparado espera su primer
+// render y desde ahí queda en caché.
+export const instant = false;
 
-async function Menu({ params }: Pick<PageProps<"/r/[slug]">, "params">) {
+export default async function PaginaMenu({ params }: PageProps<"/r/[slug]">) {
   const { slug } = await params;
   const menu = await obtenerMenuPublico(slug);
   if (!menu) notFound();

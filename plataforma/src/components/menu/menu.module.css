@@ -42,7 +42,7 @@
   display: grid;
   place-items: center;
   background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--m-acento) 35%, var(--m-fondo)) 0%, var(--m-fondo) 62%);
-  animation: salir 0.6s var(--m-curva) 1.3s forwards;
+  animation: salir 0.4s var(--m-curva) 0.7s forwards;
   pointer-events: none;
 }
 .bienvenidaLogo {
@@ -50,9 +50,9 @@
   height: auto;
   -webkit-mask: radial-gradient(ellipse 50% 50%, #000 70%, transparent 100%);
   mask: radial-gradient(ellipse 50% 50%, #000 70%, transparent 100%);
-  animation: entrar 0.9s var(--m-curva) both;
+  animation: entrar 0.6s var(--m-curva) both;
 }
-.bienvenidaNombre { font-family: var(--m-titulo); font-size: 40px; animation: entrar 0.9s var(--m-curva) both; }
+.bienvenidaNombre { font-family: var(--m-titulo); font-size: 40px; animation: entrar 0.6s var(--m-curva) both; }
 @keyframes entrar { from { opacity: 0; transform: scale(0.85) translateY(10px); } }
 @keyframes salir { to { opacity: 0; visibility: hidden; } }
 
