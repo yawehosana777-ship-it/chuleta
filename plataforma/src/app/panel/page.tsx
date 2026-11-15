@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { cerrarSesion } from "@/app/acceso/acciones";
 
@@ -14,6 +15,8 @@ type Membresia = {
 };
 
 export default async function PaginaPanel() {
+  // Siempre en el momento de la petición: depende de la sesión del usuario.
+  await connection();
   const supabase = await clienteServidor();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/acceso?siguiente=/panel");

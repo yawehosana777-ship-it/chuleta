@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fase 1
+# Plataforma de menús digitales — Fases 1 y 2
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -13,8 +13,12 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Inicio y cierre de sesión | ✅ `/acceso` |
 | Panel básico (muestra los restaurantes del usuario) | ✅ `/panel` |
 | Carta real de Don Chuleta cargada en la base | ✅ Desde el SQL Editor |
-| Menú del cliente conectado a la base | ⏳ Fase 2 |
-| Administración de menú, empleados, pedidos | ⏳ Fases 3–5 |
+| Menú del cliente leyendo la base de datos | ✅ Fase 2 · `/r/<slug>` |
+| Bienvenida, portada, buscador, categorías, detalle con opciones | ✅ Fase 2 |
+| Carrito y resumen para mostrar al mesero (no se envía ni se guarda) | ✅ Fase 2 |
+| Plantillas de tema (`parrilla`, `claro`, `campo`) y colores propios validados | ✅ Fase 2 |
+| Enviar pedidos en línea | ⏳ Fase 4 |
+| Administración de menú, fotos, empleados | ⏳ Fase 3 |
 
 ## Cómo se puso en marcha (ya hecho en el proyecto `uqwojpsvrfoqsfaldkhj`)
 
@@ -32,10 +36,24 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
    select create_restaurant_invite('Don Chuleta', 'don-chuleta', 'CORREO_DEL_DUEÑO');
    ```
 5. **Carta:** pegar y ejecutar `supabase/sql-editor/03-cargar-carta.sql` (no duplica si se repite).
+6. **Fase 2:** ejecutar `supabase/sql-editor/04-fase-2.sql` (íconos y fotos por categoría) y luego
+   `05-presentacion-don-chuleta.sql` (dirección, logo, portada, tema). El segundo se puede repetir.
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400`
+
+## Menú del cliente (Fase 2)
+- Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
+- Se lee con un cliente **anónimo** (sin sesión), así el dueño ve exactamente lo mismo que un cliente.
+- Caché de ~1 minuto: un cambio en la base (precio, agotado, nombre) aparece solo, sin volver a publicar.
+  En la Fase 3 el panel invalidará la caché al guardar (`etiquetaMenu` en `src/server/menu-publico.ts`).
+- Imágenes: por ahora las de Don Chuleta viven en `public/menus/don-chuleta/`. Las rutas que no empiezan
+  con `/` se leen del bucket público `menu` de Supabase Storage (se crea en la Fase 3 para que el dueño suba fotos).
+- Tema: `restaurants.theme` = `{ "plantilla": "parrilla" | "claro" | "campo", "colores": {...}, "lema": "...", "etiquetas": [...] }`.
+  Colores inválidos se ignoran (no se puede inyectar CSS).
+- El carrito vive solo en la memoria del teléfono: no se guarda ni se envía. El resumen dice claramente que
+  hay que mostrárselo al mesero.
 
 ### Prueba
 ```
@@ -74,8 +92,11 @@ Las pruebas de base de datos usan PostgreSQL en memoria (PGlite) con las mismas 
 
 ## Estructura
 ```
-src/app/            páginas: acceso, invitación, panel
-src/lib/            Supabase (servidor / admin), validaciones, invitaciones
+src/app/            páginas: acceso, invitación, panel, r/[slug] (menú del cliente)
+src/components/menu vista del menú (portada, buscador, hojas de producto y pedido)
+src/lib/            Supabase (servidor / admin / público), validaciones, invitaciones, dinero
+src/lib/menu/       armar el menú, carrito, temas, rutas de imagen (sin servidor: se prueban solos)
+src/server/         lectura del menú público con caché
 src/proxy.ts        renueva la sesión y protege /panel y /empleado
 supabase/migrations esquema + seguridad (RLS)
 supabase/seed       carta de Don Chuleta

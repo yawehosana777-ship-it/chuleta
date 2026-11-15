@@ -1,6 +1,6 @@
 # Plataforma de menús digitales multi-restaurante — Plan técnico
 
-> Estado: **Fase 1 aplicada al proyecto de Supabase y probada** (base de datos creada desde el SQL Editor, Don Chuleta activo con su carta, dueño de prueba con acceso al panel). Ver `plataforma/README.md`.
+> Estado: **Fase 1 aprobada. Fase 2 construida y probada** (menú del cliente en `/r/don-chuleta` leyendo Supabase; un cambio de precio en la base apareció solo en ~1 minuto). Pendiente de la Fase 2: medir con Lighthouse. Ver `plataforma/README.md`.
 > La demo de Don Chuleta se conserva sin cambios en `demo/` como referencia visual.
 
 ### Decisiones confirmadas (16-nov-2026)

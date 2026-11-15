@@ -6,6 +6,7 @@ const montserrat = Montserrat({ variable: "--font-montserrat", subsets: ["latin"
 const alfa = Alfa_Slab_One({ variable: "--font-alfa", weight: "400", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: { default: "Menús digitales", template: "%s · Menús digitales" },
   description: "Plataforma de menús digitales y pedidos para restaurantes.",
 };
