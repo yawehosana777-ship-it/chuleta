@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Cargando } from "@/components/ui/cargando";
 import { Aviso } from "@/components/ui/formulario";
@@ -21,6 +22,8 @@ export default function PaginaInvitacion({ params }: PageProps<"/acceso/invitaci
 }
 
 async function Invitacion({ params }: Pick<PageProps<"/acceso/invitacion/[token]">, "params">) {
+  // Siempre en el momento de la petición: el estado de la invitación cambia.
+  await connection();
   const { token } = await params;
 
   let vista: Vista | null = null;

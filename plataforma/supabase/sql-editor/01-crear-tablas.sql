@@ -405,7 +405,6 @@ begin
   end loop;
 end $$;
 
-
 -- ===== 20261116000200_seguridad.sql =====
 -- =====================================================================
 -- Fase 1 · Seguridad: aislamiento por restaurante (RLS), permisos,
@@ -789,7 +788,6 @@ grant execute on function public.create_restaurant_with_invitation(text, text, t
                           public.accept_invitation(text, uuid, text),
                           public.set_restaurant_status(text, public.restaurant_status)
   to service_role;
-
 
 -- ===== 20261116000300_invitaciones_sin_clave_secreta.sql =====
 -- =====================================================================

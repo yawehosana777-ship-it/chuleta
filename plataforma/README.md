@@ -8,49 +8,54 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 |---|---|
 | Base de datos completa (restaurantes, menú, mesas, pedidos, entregas, avisos, auditoría) | ✅ Migraciones listas |
 | Aislamiento entre restaurantes (RLS) | ✅ 23 pruebas automáticas |
-| Alta de restaurante + invitación de un solo uso | ✅ Script `restaurante:crear` |
+| Alta de restaurante + invitación de un solo uso | ✅ Desde el SQL Editor |
 | Dueño crea su cuenta desde la invitación | ✅ `/acceso/invitacion/<token>` |
 | Inicio y cierre de sesión | ✅ `/acceso` |
 | Panel básico (muestra los restaurantes del usuario) | ✅ `/panel` |
-| Carta real de Don Chuleta cargada en la base | ✅ Script `carta:cargar` |
+| Carta real de Don Chuleta cargada en la base | ✅ Desde el SQL Editor |
 | Menú del cliente conectado a la base | ⏳ Fase 2 |
 | Administración de menú, empleados, pedidos | ⏳ Fases 3–5 |
 
-## Cómo ponerla en marcha (una sola vez)
+## Cómo se puso en marcha (ya hecho en el proyecto `uqwojpsvrfoqsfaldkhj`)
 
-Abre una terminal **en la carpeta `plataforma`**.
+La Fase 1 **no necesita la clave secreta**: todo lo administrativo se ejecuta en
+Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro de la base de datos.
 
-### 1. Pega tus claves
-Abre `.env.local` (con el Bloc de notas) y pega después del `=`:
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` → Supabase › Project Settings › API Keys › **Publishable key** › botón copiar.
-- `SUPABASE_SECRET_KEY` → misma página › **Secret keys** › botón copiar.
+1. **Clave pública:** `.env.local` lleva `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+   `SUPABASE_SECRET_KEY` queda vacía hasta la Fase 3. **Nunca compartas la clave secreta.**
+2. **Tablas:** pegar y ejecutar `supabase/sql-editor/01-crear-tablas.sql` (las 3 migraciones juntas).
+   Si Supabase avisa de RLS, elegir **"Run and enable RLS"**.
+3. **Authentication › Sign In / Providers › Email:** "Confirm email" **desactivado** (el correo gratuito
+   de Supabase solo llega a miembros del proyecto). Se reactiva en la Fase 8 con un correo propio.
+4. **Alta de Don Chuleta** (devuelve el token de invitación):
+   ```sql
+   select create_restaurant_invite('Don Chuleta', 'don-chuleta', 'CORREO_DEL_DUEÑO');
+   ```
+5. **Carta:** pegar y ejecutar `supabase/sql-editor/03-cargar-carta.sql` (no duplica si se repite).
 
-Guarda el archivo. **Nunca compartas la clave secreta.**
+> Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
+> Antes de usar `supabase db push` en el futuro:
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300`
 
-### 2. Crea las tablas en Supabase
-```
-npx supabase login
-npm run db:vincular
-npm run db:aplicar
-```
-- `login` abre el navegador para autorizar.
-- `db:vincular` te pide la **contraseña de la base de datos** (la que guardaste al crear el proyecto).
-- `db:aplicar` crea todas las tablas y reglas de seguridad. Responde `Y` cuando pregunte.
-
-### 3. Da de alta a Don Chuleta
-```
-npm run restaurante:crear -- --nombre "Don Chuleta" --slug don-chuleta --email CORREO_DEL_DUEÑO
-npm run carta:cargar -- --slug don-chuleta
-```
-El primer comando imprime un **enlace de invitación** (vence en 72 h, un solo uso).
-
-### 4. Prueba
+### Prueba
 ```
 npm run dev
 ```
-1. Abre el enlace de invitación en el navegador → crea la contraseña → entras al panel y ves "Don Chuleta · Dueño · Activo".
-2. Cierra sesión y vuelve a entrar en `http://localhost:3000/acceso`.
-3. Intenta abrir el enlace de invitación otra vez → debe decir "ya fue utilizada".
+1. Abrir `http://localhost:3000/acceso/invitacion/<token>` → crear la contraseña → el panel muestra "Don Chuleta · Dueño · Activo".
+2. Cerrar sesión y volver a entrar en `http://localhost:3000/acceso`.
+3. Abrir el enlace de invitación otra vez → debe decir "ya fue utilizada".
+
+> **Si no deja entrar aunque la contraseña es correcta:** revisa que la hora de la computadora
+> sea la correcta (Windows › Fecha y hora › "Establecer la hora automáticamente"). Con el reloj
+> desfasado, la sesión parece vencida y el panel regresa a la pantalla de acceso.
+
+## Entregar el restaurante a su dueño
+La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
+```sql
+select new_invitation_token('don-chuleta', 'CORREO_DEL_DUEÑO', 'owner');
+```
+Se le envía `https://<dominio>/acceso/invitacion/<token>`: solo funciona con ese correo, una vez, durante 72 h.
+Él crea su propia contraseña (Supabase la guarda cifrada; nadie más la conoce).
 
 ## Pruebas automáticas
 ```
@@ -59,7 +64,7 @@ npm run test:db   # solo aislamiento y permisos de la base de datos
 ```
 Las pruebas de base de datos usan PostgreSQL en memoria (PGlite) con las mismas migraciones.
 
-## Comandos de administración
+## Comandos de administración (requieren `SUPABASE_SECRET_KEY`; alternativa a los SQL de arriba)
 | Comando | Para qué |
 |---|---|
 | `npm run restaurante:crear -- --nombre "..." --slug ... --email ...` | Alta de restaurante (queda pendiente hasta que el dueño acepte) |
