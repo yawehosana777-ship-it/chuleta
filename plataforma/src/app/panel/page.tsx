@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { cerrarSesion } from "@/app/acceso/acciones";
+import { exigirContrasenaPropia } from "@/server/panel/perfil";
 
 export const metadata: Metadata = { title: "Panel" };
 
@@ -20,6 +22,7 @@ export default async function PaginaPanel() {
   const supabase = await clienteServidor();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/acceso?siguiente=/panel");
+  await exigirContrasenaPropia(supabase, auth.user.id);
 
   // Estas consultas pasan por RLS: solo devuelven lo que este usuario puede ver.
   const [{ data: perfil }, { data: membresias, error }] = await Promise.all([
@@ -31,6 +34,10 @@ export default async function PaginaPanel() {
       .eq("active", true)
       .returns<Membresia[]>(),
   ]);
+
+  // Con un solo restaurante (lo normal para empleados), entra directo.
+  const activos = membresias?.filter((m) => m.restaurants && m.restaurants.status !== "suspended") ?? [];
+  if (activos.length === 1) redirect(`/panel/${activos[0].restaurants!.slug}`);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -52,23 +59,20 @@ export default async function PaginaPanel() {
         )}
         <ul className="mt-4 grid gap-3">
           {membresias?.map((m) => (
-            <li key={m.restaurants?.slug} className="rounded-2xl border border-linea bg-superficie p-5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-lg font-semibold">{m.restaurants?.name}</p>
-                <span className="rounded-full bg-guinda/50 px-3 py-1 text-xs font-semibold">{ROLES[m.role] ?? m.role}</span>
-              </div>
-              <p className="mt-1 text-sm text-tenue">
-                /r/{m.restaurants?.slug} · {ESTADOS[m.restaurants?.status ?? ""] ?? m.restaurants?.status}
-              </p>
+            <li key={m.restaurants?.slug}>
+              <Link href={`/panel/${m.restaurants?.slug}`} className="block rounded-2xl border border-linea bg-superficie p-5 transition hover:border-dorado/40">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-lg font-semibold">{m.restaurants?.name}</p>
+                  <span className="rounded-full bg-guinda/50 px-3 py-1 text-xs font-semibold">{ROLES[m.role] ?? m.role}</span>
+                </div>
+                <p className="mt-1 text-sm text-tenue">
+                  /r/{m.restaurants?.slug} · {ESTADOS[m.restaurants?.status ?? ""] ?? m.restaurants?.status}
+                </p>
+              </Link>
             </li>
           ))}
         </ul>
       </section>
-
-      <p className="mt-10 rounded-xl border border-dashed border-dorado/30 px-4 py-3 text-sm text-tenue">
-        Fase 1: el inicio de sesión y el aislamiento entre restaurantes ya funcionan. La administración del menú,
-        pedidos y empleados llega en las Fases 3 a 5.
-      </p>
     </main>
   );
 }

@@ -22,6 +22,18 @@ const PRELUDIO_SUPABASE = `
 
   create schema extensions;
 
+  -- Lo mínimo de Supabase Storage para aplicar las políticas de fotos.
+  create schema storage;
+  create table storage.buckets (id text primary key, name text, public boolean,
+    file_size_limit bigint, allowed_mime_types text[]);
+  create table storage.objects (id uuid primary key default gen_random_uuid(),
+    bucket_id text references storage.buckets (id), name text, owner uuid);
+  create function storage.foldername(name text) returns text[] language sql immutable as
+    $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
+  alter table storage.objects enable row level security;
+  grant usage on schema storage to anon, authenticated, service_role;
+  grant select, insert, update, delete on storage.objects to authenticated;
+
   -- Igual que Supabase: por defecto todo lo nuevo en public queda concedido.
   alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
   alter default privileges in schema public grant all on functions to anon, authenticated, service_role;

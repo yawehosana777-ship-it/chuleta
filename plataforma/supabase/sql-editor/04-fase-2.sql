@@ -2,11 +2,11 @@
 -- Copia de supabase/migrations/20261116000400_presentacion_menu.sql.
 
 -- =====================================================================
--- Fase 2 Â· PresentaciÃ³n del menÃº del cliente
---   * Ãcono y foto de portada por categorÃ­a.
+-- Fase 2 · Presentación del menú del cliente
+--   * Ícono y foto de portada por categoría.
 --   * Las rutas de imagen solo admiten caracteres seguros: o bien un
---     archivo de la aplicaciÃ³n (/menus/...) o una ruta dentro del bucket
---     pÃºblico de Storage (se habilita en la Fase 3).
+--     archivo de la aplicación (/menus/...) o una ruta dentro del bucket
+--     público de Storage (se habilita en la Fase 3).
 -- =====================================================================
 
 create function app.ruta_imagen_valida(p text) returns boolean

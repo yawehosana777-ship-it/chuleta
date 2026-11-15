@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     ];
   },
   partialPrefetching: true,
+  // Las fotos se reducen en el teléfono antes de subirlas (~1 MB); margen para 3 MB.
+  experimental: { serverActions: { bodySizeLimit: "3mb" } },
   turbopack: {
     rules: {
       "*.css": {
