@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fases 1 a 5
+# Plataforma de menús digitales — Fases 1 a 6
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -22,6 +22,7 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Pedidos a domicilio (gratis, solo Malacatancito, efectivo al recibir) | ✅ Fase 4B · desde `/r/<slug>` |
 | Aviso en vivo con sonido, pantalla de cocina por áreas, encargado, avisos de atraso | ✅ Fase 5 |
 | WhatsApp oficial | ✖ No se usa (decisión del dueño, 15-nov-2026) |
+| Promociones con fechas, destacados («Recomendados») e informes de ventas | ✅ Fase 6 |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
 | Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 
@@ -47,10 +48,11 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 8. **Fase 4A:** ejecutar `supabase/sql-editor/07-fase-4a.sql` (pedidos de mesa, horario, estados y cierre de cuenta).
 9. **Fase 4B:** ejecutar `supabase/sql-editor/08-fase-4b.sql` (pedidos a domicilio).
 10. **Fase 5:** ejecutar `supabase/sql-editor/09-fase-5.sql` (tiempo real de pedidos, áreas, encargado, avisos de atraso).
+11. **Fase 6:** ejecutar `supabase/sql-editor/10-fase-6.sql` (promociones e informes).
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700 20261116000800`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700 20261116000800 20261116000900`
 
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
@@ -162,6 +164,23 @@ Entregado y cobrado → la página del cliente mostró "Entregado" y el cobro de
 Panel "En vivo" → pedido de mesa desde otra pestaña: el aviso apareció en **0.83 s** (pedido #3); pedido a domicilio: **1.06 s**
 (#4) y el título mostró "(1)". "Me encargo" → "Atiende: Tú". Cocina con área Barra mostró solo las Coronitas del pedido;
 Empezar → Listo. Al final se cerraron los pedidos y la cuenta, se borraron las áreas de prueba y se vació el horario.
+## Promociones e informes (Fase 6)
+- **Promociones** (Panel › Promociones, `menu.edit`): porcentaje o monto fijo, a productos o categorías completas, con fecha y
+  hora de inicio y fin (hora de Guatemala), «acumulable» y «activa». El menú muestra el precio tachado y la etiqueta («-20%»).
+- **La base de datos cobra** (`app.descuento_unitario` dentro de `app.armar_lineas`): descuento sobre el precio del producto,
+  no sobre los extras; nunca deja un precio negativo; con varias promociones se aplica la que más descuenta y solo las acumulables
+  se suman (si dan más). Cada línea del pedido guarda su descuento y el nombre de la promoción. El menú usa la misma regla
+  (`src/lib/menu/promociones.ts`) solo para mostrar.
+- **Combos:** se crean como productos normales (p. ej. «Combo hamburguesa + gaseosa» con la opción «Elige tu bebida»).
+- **Destacados:** la casilla «Destacado» del producto lo muestra en «Recomendados», al inicio del menú.
+- **Informes** (Panel › Informes, `reports.view`, función `sales_report`): Hoy, Ayer, 7 días, Este mes, 30 días o fechas
+  propias. Separa registrados, entregados, cancelados, en curso y **cobrado en efectivo**; ventas, descuentos, ticket promedio,
+  mesa vs. domicilio, ventas por día y los 10 más vendidos.
+
+### Prueba realizada (16-nov-2026)
+Promoción «Prueba 20%» en Chuleta + Chuleta destacada → el menú mostró «Recomendados» y Q 30.00 tachado → Q 24.00 «-20%»; el carrito
+cobró Q 24.00 y la base de datos (consulta de solo lectura) calculó el mismo descuento (Q 6.00). Informes de 30 días en cero (datos de
+prueba ya borrados). Al final se borró la promoción y se quitó el destacado. No se crearon pedidos de prueba.
 ## Entregar el restaurante a su dueño
 La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
 ```sql

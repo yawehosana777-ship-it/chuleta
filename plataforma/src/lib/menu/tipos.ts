@@ -14,6 +14,10 @@ export type Producto = {
   precio: number | null;
   agotado: boolean;
   destacado: boolean;
+  /** Promoción vigente: centavos de descuento por unidad (0 = sin promoción). */
+  descuento: number;
+  promocion: string | null;
+  etiquetaPromocion: string | null;
   imagen: string | null;
   grupos: GrupoOpciones[];
 };

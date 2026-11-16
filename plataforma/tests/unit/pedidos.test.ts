@@ -49,7 +49,10 @@ describe("lo que manda el teléfono", () => {
 });
 
 describe("carrito con observaciones", () => {
-  const p: Producto = { id: ID, nombre: "Chuleta", descripcion: null, precio: 3000, agotado: false, destacado: false, imagen: null, grupos: [] };
+  const p: Producto = {
+    id: ID, nombre: "Chuleta", descripcion: null, precio: 3000, agotado: false, destacado: false, imagen: null, grupos: [],
+    descuento: 0, promocion: null, etiquetaPromocion: null,
+  };
 
   it("la misma comida con observaciones distintas son líneas distintas", () => {
     const a = crearLinea(p, {}, 1, "sin cebolla")!;

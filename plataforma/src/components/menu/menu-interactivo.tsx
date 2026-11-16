@@ -55,6 +55,12 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
       .filter((c) => c.productos.length > 0);
   }, [categorias, termino]);
 
+  // Productos que el dueño marcó como "Destacado", al inicio del menú.
+  const recomendados = useMemo(
+    () => categorias.flatMap((categoria) => categoria.productos.filter((p) => p.destacado).map((producto) => ({ producto, categoria }))),
+    [categorias],
+  );
+
   // Resalta la categoría que se está viendo al desplazarse.
   useEffect(() => {
     if (termino) return;
@@ -152,6 +158,22 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
       <div aria-live="polite" className="sr-only">
         {termino && `${visibles.reduce((n, c) => n + c.productos.length, 0)} resultados`}
       </div>
+
+      {!termino && recomendados.length > 0 && (
+        <section className={s.seccion} aria-labelledby="t-recomendados">
+          <div className={s.cabecera}>
+            <h2 id="t-recomendados" className={s.seccionTitulo}>Recomendados</h2>
+          </div>
+          <ul className={s.lista}>
+            {recomendados.map(({ producto, categoria }) => (
+              <li key={`r-${producto.id}`}>
+                <TarjetaProducto producto={producto} icono={categoria.icono} cantidad={cantidadEn(producto.id)} Q={Q}
+                  onAbrir={() => setAbierto({ producto, categoria })} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {visibles.map((c) => (
         <section key={c.id} id={idSeccion(c.id)} className={s.seccion} aria-labelledby={`t-${c.id}`}>
@@ -251,7 +273,7 @@ function TarjetaProducto({ producto: p, icono, cantidad, Q, onAbrir }: {
           <span className={s.productoNota}>{p.grupos[0].nombre}: {p.grupos[0].opciones.map((o) => o.nombre).join(" o ")}</span>
         )}
         <span className={s.productoPie}>
-          {p.precio === null ? <span className={s.precioPendiente}>Precio por confirmar</span> : <span className={s.precio}>{Q(p.precio)}</span>}
+          <Precio producto={p} Q={Q} />
           {p.agotado && <span className={s.agotado}>Agotado</span>}
           <span className={`${s.agregar} ${disponible ? "" : s.agregarApagado}`} aria-hidden="true">
             {disponible ? <IconoMas size={16} /> : <IconoReloj size={15} />}
@@ -259,6 +281,19 @@ function TarjetaProducto({ producto: p, icono, cantidad, Q, onAbrir }: {
         </span>
       </span>
     </button>
+  );
+}
+
+/** Precio normal, o tachado con el precio de promoción y su etiqueta ("-20%"). */
+function Precio({ producto: p, Q }: { producto: Producto; Q: Formato }) {
+  if (p.precio === null) return <span className={s.precioPendiente}>Precio por confirmar</span>;
+  if (!p.descuento) return <span className={s.precio}>{Q(p.precio)}</span>;
+  return (
+    <span className={s.precioPromo}>
+      <s className={s.precioAntes}><span className="sr-only">Antes </span>{Q(p.precio)}</s>
+      <span className={s.precio}><span className="sr-only">Ahora </span>{Q(p.precio - p.descuento)}</span>
+      {p.etiquetaPromocion && <span className={s.etiquetaPromo}>{p.etiquetaPromocion}</span>}
+    </span>
   );
 }
 
@@ -304,7 +339,8 @@ function HojaProducto({ producto: p, categoria, Q, conNota, onCerrar, onAgregar 
           <h2 id="detalle-nombre" className={s.detalleNombre}>{p.nombre}</h2>
           {(p.descripcion ?? categoria.descripcion) && <p className={s.detalleNota}>{p.descripcion ?? categoria.descripcion}</p>}
           <div className={s.detallePrecio}>
-            {p.precio === null ? <span className={s.precioPendiente}>Precio por confirmar</span> : Q(p.precio)}
+            <Precio producto={p} Q={Q} />
+            {p.promocion && <span className={s.promoNombre}>{p.promocion}</span>}
           </div>
           {p.grupos.map((g) => (
             <fieldset key={g.id} className={s.grupo}>

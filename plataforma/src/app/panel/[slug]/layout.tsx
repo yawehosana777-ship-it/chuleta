@@ -19,6 +19,8 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
     ctx.puede("orders.view") && { ruta: "cocina", nombre: "Cocina" },
     ctx.puede("tables.manage") && { ruta: "mesas", nombre: "Mesas" },
     ctx.puede("menu.edit") && { ruta: "menu", nombre: "Menú" },
+    ctx.puede("menu.edit") && { ruta: "promociones", nombre: "Promociones" },
+    ctx.puede("reports.view") && { ruta: "informes", nombre: "Informes" },
     ctx.puede("settings.edit") && { ruta: "restaurante", nombre: "Restaurante" },
     ctx.puede("staff.manage") && { ruta: "empleados", nombre: "Empleados" },
   ].filter((s): s is { ruta: string; nombre: string } => Boolean(s));

@@ -2,6 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { envPublico } from "@/lib/env";
 import { armarMenu, type FilaCategoria, type FilaRestaurante } from "@/lib/menu/armar";
+import type { FilaPromocion } from "@/lib/menu/promociones";
 import type { MenuPublico } from "@/lib/menu/tipos";
 import { clientePublico } from "@/lib/supabase/publico";
 
@@ -55,9 +56,20 @@ export async function obtenerMenuPublico(slug: string): Promise<MenuPublico | nu
     .eq("products.active", true);
   if (errorMenu) throw new Error(`No se pudo leer el menú: ${errorMenu.message}`);
 
+  // El público solo ve las promociones activas y vigentes en este momento (RLS).
+  // La caché dura ~1 minuto: al empezar o terminar una promoción, el menú se
+  // pone al día solo; el cobro siempre lo calcula la base de datos.
+  const { data: promociones, error: errorPromos } = await supabase
+    .from("promotions")
+    .select("name, kind, value, stackable, promotion_items(product_id, category_id)")
+    .eq("restaurant_id", restaurante.id)
+    .in("kind", ["percent", "fixed"]);
+  if (errorPromos) throw new Error(`No se pudieron leer las promociones: ${errorPromos.message}`);
+
   return armarMenu(
     restaurante as FilaRestaurante,
     (categorias ?? []) as FilaCategoria[],
     envPublico().NEXT_PUBLIC_SUPABASE_URL,
+    (promociones ?? []) as FilaPromocion[],
   );
 }

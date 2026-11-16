@@ -13,10 +13,10 @@ export const metadata: Metadata = { title: "Tu pedido", robots: { index: false }
 export const instant = false;
 
 type Seguimiento = {
-  number: number; type: TipoPedido; status: EstadoPedido; subtotal_cents: number; delivery_fee_cents: number; total_cents: number;
+  number: number; type: TipoPedido; status: EstadoPedido; subtotal_cents: number; discount_cents: number; delivery_fee_cents: number; total_cents: number;
   created_at: string; notes: string | null; address: string | null; references: string | null;
   restaurant: string; slug: string; currency: string; phone: string | null; table: string | null;
-  items: { name: string; quantity: number; options: { name: string }[]; notes: string | null; line_total_cents: number }[];
+  items: { name: string; quantity: number; options: { name: string }[]; notes: string | null; discount_cents: number; promotion: string | null; line_total_cents: number }[];
   account: { open: boolean; total_cents: number; orders: { number: number; status: EstadoPedido; total_cents: number }[] } | null;
 };
 
@@ -75,12 +75,18 @@ export default async function PaginaSeguimiento({ params, searchParams }: PagePr
                 {i.quantity} × {i.name}
                 {i.options.length > 0 && <span className="text-tenue"> ({i.options.map((o) => o.name).join(", ")})</span>}
                 {i.notes && <span className="block text-xs italic text-tenue">“{i.notes}”</span>}
+                {i.discount_cents > 0 && <span className="block text-xs text-emerald-300">{i.promotion ?? "Promoción"}: −{Q(i.discount_cents)}</span>}
               </span>
               <span className="whitespace-nowrap">{Q(i.line_total_cents)}</span>
             </li>
           ))}
         </ul>
         {p.notes && <p className="mt-3 text-xs text-tenue">Notas: {p.notes}</p>}
+        {p.discount_cents > 0 && (
+          <p className="mt-3 flex justify-between text-sm text-emerald-300">
+            <span>Ahorraste</span><span>−{Q(p.discount_cents)}</span>
+          </p>
+        )}
         {domicilio && (
           <p className="mt-3 flex justify-between text-sm text-tenue">
             <span>Envío</span><span>{p.delivery_fee_cents ? Q(p.delivery_fee_cents) : "Gratis"}</span>

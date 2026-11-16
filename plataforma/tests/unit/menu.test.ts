@@ -58,6 +58,7 @@ const grupoCerveza: GrupoOpciones = {
 };
 const michelada: Producto = {
   id: "p1", nombre: "Michelada", descripcion: null, precio: 2000, agotado: false, destacado: false, imagen: null, grupos: [grupoCerveza],
+  descuento: 0, promocion: null, etiquetaPromocion: null,
 };
 
 describe("carrito", () => {

@@ -61,7 +61,8 @@ export function crearLinea(p: Producto, eleccion: Eleccion, cantidad: number, no
     detalle: elegidas.map((o) => o.nombre),
     opciones: ids,
     nota: notaLimpia,
-    precioUnitario: p.precio! + elegidas.reduce((s, o) => s + o.extra, 0),
+    // La promoción descuenta del precio del producto, no de los extras (igual que la base de datos).
+    precioUnitario: p.precio! - (p.descuento ?? 0) + elegidas.reduce((s, o) => s + o.extra, 0),
     cantidad: Math.min(Math.max(1, Math.trunc(cantidad)), CANTIDAD_MAXIMA),
   };
 }

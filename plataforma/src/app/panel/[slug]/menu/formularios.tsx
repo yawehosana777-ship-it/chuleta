@@ -77,7 +77,7 @@ export function FormularioProducto({ slug, producto, categorias, categoriaInicia
       <div className="grid gap-2 sm:grid-cols-3">
         <Casilla etiqueta="Visible" detalle="Se muestra en el menú" name="activo" defaultChecked={producto?.active ?? true} />
         <Casilla etiqueta="Agotado" detalle="Se ve, pero no se pide" name="agotado" defaultChecked={producto?.sold_out ?? false} />
-        <Casilla etiqueta="Destacado" detalle="Para promociones (Fase 6)" name="destacado" defaultChecked={producto?.featured ?? false} />
+        <Casilla etiqueta="Destacado" detalle="Aparece en «Recomendados», al inicio del menú" name="destacado" defaultChecked={producto?.featured ?? false} />
       </div>
       <Resultado estado={estado} />
       <Guardar>{producto ? "Guardar cambios" : "Crear producto"}</Guardar>

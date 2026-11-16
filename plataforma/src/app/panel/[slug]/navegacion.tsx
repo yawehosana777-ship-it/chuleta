@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export function Navegacion({ slug, secciones }: { slug: string; secciones: { ruta: string; nombre: string }[] }) {
   const ruta = usePathname();
   return (
-    <nav aria-label="Secciones del panel" className="-mx-4 overflow-x-auto px-4">
+    <nav aria-label="Secciones del panel" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ul className="flex gap-2">
         {secciones.map((s) => {
           const href = `/panel/${slug}/${s.ruta}`;

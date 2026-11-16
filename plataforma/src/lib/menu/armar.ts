@@ -2,6 +2,7 @@
 // ordena, quita lo inactivo y valida imágenes y tema.
 // No depende del servidor, así se puede probar sin conexión.
 import { urlImagen } from "./imagenes";
+import { descuentoUnitario, type FilaPromocion } from "./promociones";
 import { leerTema } from "./temas";
 import { ICONOS, type Categoria, type Icono, type MenuPublico } from "./tipos";
 
@@ -61,7 +62,9 @@ const ordenar = <T extends ConPosicion>(filas: T[] | null | undefined) =>
 
 const icono = (valor: string): Icono => ((ICONOS as readonly string[]).includes(valor) ? (valor as Icono) : "plato");
 
-export function armarMenu(r: FilaRestaurante, filas: FilaCategoria[], urlSupabase: string): MenuPublico {
+export function armarMenu(r: FilaRestaurante, filas: FilaCategoria[], urlSupabase: string, promociones: FilaPromocion[] = []): MenuPublico {
+  const promo = (precio: number | null, productoId: string, categoriaId: string) =>
+    precio === null ? { descuento: 0, nombre: null, etiqueta: null } : descuentoUnitario(precio, productoId, categoriaId, promociones);
   const categorias: Categoria[] = ordenar(filas)
     .filter((c) => c.active)
     .map((c) => ({
@@ -72,26 +75,32 @@ export function armarMenu(r: FilaRestaurante, filas: FilaCategoria[], urlSupabas
       imagen: urlImagen(c.image_path, urlSupabase),
       productos: ordenar(c.products)
         .filter((p) => p.active)
-        .map((p) => ({
-          id: p.id,
-          nombre: p.name,
-          descripcion: p.description,
-          precio: p.price_cents,
-          agotado: p.sold_out,
-          destacado: p.featured,
-          imagen: ordenar(p.product_images).map((i) => urlImagen(i.storage_path, urlSupabase)).find(Boolean) ?? null,
-          grupos: ordenar(p.option_groups)
-            .map((g) => ({
-              id: g.id,
-              nombre: g.name,
-              min: g.min_select,
-              max: g.max_select,
-              opciones: ordenar(g.options)
-                .filter((o) => o.active)
-                .map((o) => ({ id: o.id, nombre: o.name, extra: o.price_delta_cents })),
-            }))
-            .filter((g) => g.opciones.length > 0),
-        })),
+        .map((p) => {
+          const d = promo(p.price_cents, p.id, c.id);
+          return {
+            id: p.id,
+            nombre: p.name,
+            descripcion: p.description,
+            precio: p.price_cents,
+            agotado: p.sold_out,
+            destacado: p.featured,
+            descuento: d.descuento,
+            promocion: d.nombre,
+            etiquetaPromocion: d.etiqueta,
+            imagen: ordenar(p.product_images).map((i) => urlImagen(i.storage_path, urlSupabase)).find(Boolean) ?? null,
+            grupos: ordenar(p.option_groups)
+              .map((g) => ({
+                id: g.id,
+                nombre: g.name,
+                min: g.min_select,
+                max: g.max_select,
+                opciones: ordenar(g.options)
+                  .filter((o) => o.active)
+                  .map((o) => ({ id: o.id, nombre: o.name, extra: o.price_delta_cents })),
+              }))
+              .filter((g) => g.opciones.length > 0),
+          };
+        }),
     }))
     .filter((c) => c.productos.length > 0);
 

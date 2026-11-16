@@ -20,7 +20,7 @@ type Pedido = {
   customer_name: string | null; customer_phone: string | null; delivery_address: string | null; delivery_references: string | null;
   notes: string | null; delivery_fee_cents: number; total_cents: number; assigned_to: string | null;
   table_accounts: { tables: { label: string } | null } | null;
-  order_items: { product_name: string; quantity: number; options: { name: string }[]; notes: string | null; line_total_cents: number }[];
+  order_items: { product_name: string; quantity: number; options: { name: string }[]; notes: string | null; promotion: string | null; line_total_cents: number }[];
 };
 
 const ORDEN: Record<EstadoPedido, number> = { nuevo: 0, aceptado: 1, en_preparacion: 2, listo: 3, entregado: 4, cancelado: 5 };
@@ -102,6 +102,7 @@ export default async function PaginaPedidos({ params, searchParams }: PageProps<
                     <b>{i.quantity} ×</b> {i.product_name}
                     {i.options.length > 0 && <span className="text-tenue"> ({i.options.map((o) => o.name).join(", ")})</span>}
                     {i.notes && <span className="block pl-5 text-xs italic text-dorado">“{i.notes}”</span>}
+                    {i.promotion && <span className="block pl-5 text-xs text-emerald-300">Promo: {i.promotion}</span>}
                   </li>
                 ))}
               </ul>
@@ -176,7 +177,7 @@ async function leerDatos(ctx: NonNullable<ContextoPanel>) {
   const desde = new Date(ahora - 12 * 60 * 60 * 1000).toISOString();
   const datos = await Promise.all([
     ctx.supabase.from("orders")
-      .select("id, number, type, status, version, created_at, customer_name, customer_phone, delivery_address, delivery_references, notes, delivery_fee_cents, total_cents, assigned_to, table_accounts(tables(label)), order_items(product_name, quantity, options, notes, line_total_cents)")
+      .select("id, number, type, status, version, created_at, customer_name, customer_phone, delivery_address, delivery_references, notes, delivery_fee_cents, total_cents, assigned_to, table_accounts(tables(label)), order_items(product_name, quantity, options, notes, promotion, line_total_cents)")
       .eq("restaurant_id", ctx.restaurante.id)
       .or(`status.in.(nuevo,aceptado,en_preparacion,listo),created_at.gte.${desde}`)
       .order("created_at", { ascending: true }).limit(150).returns<Pedido[]>(),
