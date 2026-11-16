@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* Tema base de la plataforma (panel y acceso). Los menús de cada restaurante
+   tendrán su propio tema en la Fase 2. */
+:root {
+  --fondo: #141212;
+  --superficie: #1d1918;
+  --superficie-2: #272120;
+  --linea: rgba(245, 237, 227, 0.1);
+  --guinda: #7c1d22;
+  --guinda-2: #a02a30;
+  --dorado: #f2b544;
+  --dorado-suave: #f7d38a;
+  --crema: #f5ede3;
+  --tenue: #a99d94;
+}
+
+@theme inline {
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-linea: var(--linea);
+  --color-guinda: var(--guinda);
+  --color-guinda-2: var(--guinda-2);
+  --color-dorado: var(--dorado);
+  --color-dorado-suave: var(--dorado-suave);
+  --color-crema: var(--crema);
+  --color-tenue: var(--tenue);
+  --font-sans: var(--font-montserrat);
+  --font-titulo: var(--font-alfa);
+}
+
+body {
+  background: var(--fondo);
+  color: var(--crema);
+}

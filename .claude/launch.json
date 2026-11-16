@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "demo/servidor.ps1"],
+      "port": 5173
+    },
+    {
+      "name": "plataforma",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["plataforma/node_modules/next/dist/bin/next", "dev", "plataforma"],
+      "port": 3000
+    }
+  ]
+}
