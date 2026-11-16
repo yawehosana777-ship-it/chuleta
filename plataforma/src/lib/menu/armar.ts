@@ -17,7 +17,18 @@ export type FilaRestaurante = {
   logo_path: string | null;
   cover_path: string | null;
   theme: unknown;
+  delivery_enabled?: boolean;
+  delivery_settings?: FilaEntrega | FilaEntrega[] | null;
 };
+
+type FilaEntrega = { method: string; fixed_fee_cents: number | null; min_order_cents: number; area_note: string | null };
+
+/** Solo el método de costo fijo (incluye 0 = gratis) se ofrece desde la página. */
+function leerDomicilio(r: FilaRestaurante) {
+  const e = Array.isArray(r.delivery_settings) ? r.delivery_settings[0] : r.delivery_settings;
+  if (!r.delivery_enabled || !e || e.method !== "fixed") return null;
+  return { zona: e.area_note, envio: e.fixed_fee_cents ?? 0, minimo: e.min_order_cents };
+}
 
 export type FilaCategoria = ConPosicion & {
   id: string;
@@ -95,6 +106,7 @@ export function armarMenu(r: FilaRestaurante, filas: FilaCategoria[], urlSupabas
       logo: urlImagen(r.logo_path, urlSupabase),
       portada: urlImagen(r.cover_path, urlSupabase),
       tema: leerTema(r.theme),
+      domicilio: leerDomicilio(r),
     },
     categorias,
   };

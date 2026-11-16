@@ -551,6 +551,9 @@
   border-radius: 12px;
 }
 .lineaNota { display: block; font-size: 12px; color: var(--m-tenue); font-style: italic; }
+.errorCampo { margin: 0; font-size: 12px; font-weight: 600; color: #f87171; }
+.confirmarZona { margin-top: 18px; font-weight: 600; font-size: 13.5px; line-height: 1.35; }
+.confirmarZona input { flex: none; }
 
 /* Aviso breve "agregado" */
 .avisoFlotante {

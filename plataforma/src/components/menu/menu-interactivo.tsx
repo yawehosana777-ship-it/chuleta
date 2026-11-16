@@ -3,13 +3,14 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { enviarDomicilio } from "@/app/r/[slug]/acciones";
 import { enviarPedido } from "@/app/r/[slug]/mesa/[codigo]/acciones";
 import { formatoDinero } from "@/lib/dinero";
 import {
   agregarLinea, alternarOpcion, cambiarCantidad, CANTIDAD_MAXIMA, crearLinea, eleccionCompleta, NOTA_MAXIMA, seleccionInicial,
   sePuedePedir, totalArticulos, totalCarrito, type Eleccion, type LineaCarrito,
 } from "@/lib/menu/carrito";
-import type { Categoria, MesaCliente, Producto, Restaurante } from "@/lib/menu/tipos";
+import type { Categoria, Domicilio, MesaCliente, Producto, Restaurante } from "@/lib/menu/tipos";
 import { MENSAJE_MESA } from "@/lib/pedidos";
 import {
   IconoBasura, IconoBolsa, IconoBuscar, IconoCategoria, IconoCerrar, IconoCheck, IconoInfo, IconoMas, IconoReloj,
@@ -191,6 +192,10 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
             mesa.estado === "abierto"
               ? <><b>Pide desde tu teléfono.</b> Tu pedido llega directo al restaurante ({mesa.etiqueta}). El pago es en efectivo, con tu mesero, al terminar.</>
               : MENSAJE_MESA[mesa.estado]
+          ) : restaurante.domicilio ? (
+            <><b>Pide a domicilio desde aquí.</b> Entrega {restaurante.domicilio.envio ? `por ${Q(restaurante.domicilio.envio)}` : "gratis"}
+              {restaurante.domicilio.zona && ` · ${restaurante.domicilio.zona}`}. Pagas en efectivo al recibir.
+              Si estás en el restaurante, escanea el código QR de tu mesa.</>
           ) : (
             <><b>¿Quieres pedir desde tu teléfono?</b> Escanea el código QR de tu mesa. Desde esta página puedes armar tu pedido y mostrárselo a tu mesero;
               no se envía ni se guarda ningún dato tuyo.</>
@@ -207,13 +212,14 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
       )}
 
       {abierto && (
-        <HojaProducto key={abierto.producto.id} {...abierto} Q={Q} conNota={mesa?.estado === "abierto"}
+        <HojaProducto key={abierto.producto.id} {...abierto} Q={Q} conNota={mesa ? mesa.estado === "abierto" : Boolean(restaurante.domicilio)}
           onCerrar={() => setAbierto(null)} onAgregar={agregar} />
       )}
       {pedidoAbierto && (
         <HojaPedido lineas={lineas} Q={Q} iconoDe={iconoDe} imagenDe={imagenDe} onCerrar={() => setPedidoAbierto(false)}
           onCambiar={(c, d) => setLineas((ls) => cambiarCantidad(ls, c, d))} onVaciar={() => setLineas(() => [])}
-          mesa={mesa} clave={clave} onEnviado={() => setLineasBase([])} />
+          mesa={mesa} clave={clave} onEnviado={() => setLineasBase([])}
+          slug={restaurante.slug} domicilio={mesa ? null : restaurante.domicilio} />
       )}
 
       {aviso && (
@@ -339,14 +345,15 @@ function HojaProducto({ producto: p, categoria, Q, conNota, onCerrar, onAgregar 
   );
 }
 
-function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVaciar, mesa, clave, onEnviado }: {
+function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVaciar, mesa, clave, onEnviado, slug, domicilio }: {
   lineas: LineaCarrito[]; Q: Formato; iconoDe: (id: string) => Categoria["icono"]; imagenDe: (id: string) => string | null;
   onCerrar: () => void; onCambiar: (clave: string, delta: number) => void; onVaciar: () => void;
-  mesa?: MesaCliente; clave: string; onEnviado: () => void;
+  mesa?: MesaCliente; clave: string; onEnviado: () => void; slug: string; domicilio: Domicilio | null;
 }) {
   const { ref, alTocar, cerrar } = useDialogo(onCerrar);
   const [resumen, setResumen] = useState(false);
   const [enviar, setEnviar] = useState(false);
+  const [aDomicilio, setADomicilio] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enviando, iniciar] = useTransition();
   const router = useRouter();
@@ -372,7 +379,10 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
       <div className={s.asa} />
       <button type="button" className={s.cerrar} onClick={cerrar} aria-label="Cerrar"><IconoCerrar /></button>
 
-      {enviar && mesa ? (
+      {aDomicilio && domicilio ? (
+        <FormularioDomicilio lineas={lineas} Q={Q} domicilio={domicilio} slug={slug} clave={clave}
+          onVolver={() => setADomicilio(false)} onEnviado={onEnviado} />
+      ) : enviar && mesa ? (
         <form action={mandar} className="contents">
           <div className={s.hojaDesplazable}>
             <div className={s.pedidoCabecera}>
@@ -474,6 +484,7 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
               <IconoInfo size={15} />
               {puedePedir ? "Revisa tu pedido y envíalo: llega directo al restaurante."
                 : mesa ? MENSAJE_MESA[mesa.estado as Exclude<MesaCliente["estado"], "abierto">]
+                : domicilio ? `Pídelo a domicilio (entrega ${domicilio.envio ? `por ${Q(domicilio.envio)}` : "gratis"}). Si estás en el restaurante, escanea el QR de tu mesa.`
                 : "Para pedir desde tu teléfono, escanea el código QR de tu mesa. Aquí puedes mostrarle el resumen a tu mesero."}
             </p>
           </div>
@@ -482,6 +493,13 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
               <button type="button" className={s.botonPrincipal} onClick={() => { setError(null); setEnviar(true); }}>
                 <span>Continuar</span><span className={s.num}>{Q(total)}</span>
               </button>
+            ) : domicilio ? (
+              <>
+                <button type="button" className={s.vaciar} onClick={() => setResumen(true)}>Para el mesero</button>
+                <button type="button" className={s.botonPrincipal} onClick={() => setADomicilio(true)}>
+                  <span>Pedir a domicilio</span><span className={s.num}>{Q(total)}</span>
+                </button>
+              </>
             ) : (
               <button type="button" className={s.botonPrincipal} onClick={() => setResumen(true)}>
                 <span>Ver resumen</span><span className={s.num}>{Q(total)}</span>
@@ -491,5 +509,110 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
         </>
       )}
     </dialog>
+  );
+}
+
+// ---------- Domicilio ----------
+const GUARDADO = "menu:datos-domicilio";
+type DatosCliente = { nombre: string; telefono: string; direccion: string; referencias: string };
+
+/** Datos del cliente guardados SOLO en su teléfono, para no escribirlos cada vez. */
+function leerDatosCliente(): Partial<DatosCliente> {
+  try { return JSON.parse(localStorage.getItem(GUARDADO) ?? "{}"); } catch { return {}; }
+}
+
+function FormularioDomicilio({ lineas, Q, domicilio, slug, clave, onVolver, onEnviado }: {
+  lineas: LineaCarrito[]; Q: Formato; domicilio: Domicilio; slug: string; clave: string; onVolver: () => void; onEnviado: () => void;
+}) {
+  const router = useRouter();
+  const [previos] = useState(leerDatosCliente);
+  const [enviando, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [errores, setErrores] = useState<Record<string, string[]>>({});
+  const subtotal = totalCarrito(lineas);
+  const total = subtotal + domicilio.envio;
+  const faltaMinimo = domicilio.minimo > subtotal;
+  const err = (campo: string) => errores[campo]?.[0];
+
+  function mandar(datos: FormData) {
+    if (enviando) return;
+    setError(null);
+    const texto = (k: string) => String(datos.get(k) ?? "");
+    const cliente: DatosCliente = { nombre: texto("nombre"), telefono: texto("telefono"), direccion: texto("direccion"), referencias: texto("referencias") };
+    iniciar(async () => {
+      const r = await enviarDomicilio({
+        slug, clave, ...cliente, pagaCon: texto("pagaCon"), notas: texto("notas"), enZona: datos.get("enZona") === "on",
+        lineas: lineas.map((l) => ({ productoId: l.productoId, cantidad: l.cantidad, opciones: l.opciones, nota: l.nota })),
+      });
+      if ("error" in r) { setError(r.error); setErrores(r.errores ?? {}); return; }
+      try { localStorage.setItem(GUARDADO, JSON.stringify(cliente)); } catch { /* sin almacenamiento: no pasa nada */ }
+      onEnviado();
+      router.push(`/pedido/${r.token}`);
+    });
+  }
+
+  return (
+    <form action={mandar} className="contents" noValidate>
+      <div className={s.hojaDesplazable}>
+        <div className={s.pedidoCabecera}><h2>Pedido a domicilio</h2></div>
+        <div className={s.recibo}>
+          {lineas.map((l) => (
+            <div key={l.clave} className={s.fila}>
+              <span>
+                {l.cantidad} × {l.nombre}{l.detalle.length > 0 && ` (${l.detalle.join(", ")})`}
+                {l.nota && <span className={s.lineaNota}>“{l.nota}”</span>}
+              </span>
+              <span>{Q(l.cantidad * l.precioUnitario)}</span>
+            </div>
+          ))}
+          <div className={s.fila}><span>Envío</span><span>{domicilio.envio ? Q(domicilio.envio) : "Gratis"}</span></div>
+          <div className={`${s.fila} ${s.filaTotal}`}><span>Total</span><span>{Q(total)}</span></div>
+        </div>
+        <div className={s.formEnvio}>
+          <Campo nombre="nombre" etiqueta="Tu nombre" error={err("nombre")}>
+            <input id="d-nombre" name="nombre" required maxLength={60} autoComplete="name" defaultValue={previos.nombre} />
+          </Campo>
+          <Campo nombre="telefono" etiqueta="Teléfono" ayuda="para avisarte cuando vamos" error={err("telefono")}>
+            <input id="d-telefono" name="telefono" required inputMode="tel" autoComplete="tel" maxLength={20} placeholder="5555-1234" defaultValue={previos.telefono} />
+          </Campo>
+          <Campo nombre="direccion" etiqueta="Dirección" error={err("direccion")}>
+            <textarea id="d-direccion" name="direccion" rows={2} required maxLength={300} autoComplete="street-address" placeholder="Barrio, calle, número de casa" defaultValue={previos.direccion} />
+          </Campo>
+          <Campo nombre="referencias" etiqueta="Referencias" ayuda="opcional" error={err("referencias")}>
+            <input id="d-referencias" name="referencias" maxLength={300} placeholder="Ej. frente a la iglesia, portón verde" defaultValue={previos.referencias} />
+          </Campo>
+          <Campo nombre="pagaCon" etiqueta="¿Con cuánto vas a pagar?" ayuda="opcional, para llevarte cambio" error={err("pagaCon")}>
+            <input id="d-pagaCon" name="pagaCon" inputMode="decimal" maxLength={10} placeholder="Ej. 100" />
+          </Campo>
+          <Campo nombre="notas" etiqueta="Notas para el restaurante" ayuda="opcional" error={err("notas")}>
+            <textarea id="d-notas" name="notas" rows={2} maxLength={400} />
+          </Campo>
+          <label className={`${s.opcion} ${s.confirmarZona}`}>
+            Mi dirección está {domicilio.zona ? `en la zona de entrega: ${domicilio.zona}` : "dentro de la zona de entrega"}.
+            <input type="checkbox" name="enZona" required />
+          </label>
+          {err("enZona") && <p className={s.errorCampo}>{err("enZona")}</p>}
+        </div>
+        {faltaMinimo && <p role="alert" className={s.errorEnvio}>El pedido mínimo para domicilio es {Q(domicilio.minimo)}.</p>}
+        {error && <p role="alert" className={s.errorEnvio}>{error}</p>}
+        <p className={s.notaPedido}><IconoInfo size={15} />Pagas en efectivo al recibir. El precio final lo confirma el restaurante.</p>
+      </div>
+      <div className={s.hojaPie}>
+        <button type="button" className={s.vaciar} onClick={onVolver} disabled={enviando}>Volver</button>
+        <button type="submit" className={s.botonPrincipal} disabled={enviando || faltaMinimo} aria-busy={enviando}>
+          <span>{enviando ? "Enviando…" : "Enviar pedido"}</span><span className={s.num}>{Q(total)}</span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function Campo({ nombre, etiqueta, ayuda, error, children }: { nombre: string; etiqueta: string; ayuda?: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div className={s.campo}>
+      <label htmlFor={`d-${nombre}`}>{etiqueta} {ayuda && <small>({ayuda})</small>}</label>
+      {children}
+      {error && <p className={s.errorCampo}>{error}</p>}
+    </div>
   );
 }

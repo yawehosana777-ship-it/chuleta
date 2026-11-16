@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fases 1 a 3 y 4A
+# Plataforma de menús digitales — Fases 1 a 4
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -19,7 +19,7 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Plantillas de tema (`parrilla`, `claro`, `campo`) y colores propios validados | ✅ Fase 2 |
 | Pedidos de mesa por código QR, cuenta compartida, seguimiento del cliente | ✅ Fase 4A · `/r/<slug>/mesa/<código>` |
 | Panel de pedidos y mesas, horario, pausa, cierre de cuenta en efectivo | ✅ Fase 4A |
-| Pedidos a domicilio con mapa y costo de envío | ⏳ Fase 4B |
+| Pedidos a domicilio (gratis, solo Malacatancito, efectivo al recibir) | ✅ Fase 4B · desde `/r/<slug>` |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
 | Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 
@@ -43,10 +43,11 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
    `05-presentacion-don-chuleta.sql` (dirección, logo, portada, tema). El segundo se puede repetir.
 7. **Fase 3:** ejecutar `supabase/sql-editor/06-fase-3.sql` (espacio de fotos `menu` y funciones de empleados).
 8. **Fase 4A:** ejecutar `supabase/sql-editor/07-fase-4a.sql` (pedidos de mesa, horario, estados y cierre de cuenta).
+9. **Fase 4B:** ejecutar `supabase/sql-editor/08-fase-4b.sql` (pedidos a domicilio).
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700`
 
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
@@ -121,6 +122,23 @@ Horario temporal 00:00–23:59 → "Mesa de prueba" → pedido #1 desde el telé
 Q 30.00) → el panel lo mostró → Aceptar (la página del cliente cambió sola) → Listo → Entregado → Mesas: "Cobrado en
 efectivo · Cerrar cuenta" → el cliente ve "La cuenta de esta mesa ya se cerró". Pausa: el menú de la mesa avisó que
 los pedidos están pausados. Al terminar se reanudaron los pedidos y se dejó el horario vacío.
+## Pedidos a domicilio (Fase 4B)
+- **Decisión del dueño (15-nov-2026):** la entrega es **gratis** y **solo dentro de Malacatancito**, sin mapa ni servicio de
+  mapas. El cliente escribe nombre, teléfono (8 dígitos), dirección y referencias, confirma que está dentro de la zona y
+  paga **en efectivo al recibir** ("¿Con cuánto vas a pagar?" va en las notas para llevar cambio).
+- Se pide desde el menú general `/r/<slug>` → "Tu pedido" → **Pedir a domicilio**. El teléfono guarda los datos del cliente
+  solo en ese mismo teléfono para la próxima vez.
+- `create_delivery_order` usa el mismo cálculo de precios que la mesa (`app.armar_lineas`) y el mismo horario de atención.
+  Contra abusos: máximo 3 pedidos sin terminar por teléfono. Los datos del cliente solo los ve el personal con `orders.view`.
+- **Panel › Restaurante › Pedidos y horario:** domicilio sí/no, zona de entrega, costo de envío (vacío = gratis) y pedido
+  mínimo (vacío = sin mínimo). Don Chuleta: domicilio activado, "Solo Malacatancito", envío gratis, horario pendiente.
+- **Panel › Pedidos:** muestra dirección, referencias y botón para llamar. Botones: Aceptar → En camino → **Entregado y cobrado**
+  (al marcarlo se registra el cobro en efectivo).
+
+### Prueba realizada (15-nov-2026)
+Domicilio activado + horario temporal → pedido #2 desde el menú general (Hamburguesa Simple, datos ficticios, "Paga con Q 100")
+→ sin datos el formulario marcó cada campo → enviado: "Envío Gratis", total Q 35.00 → panel: Aceptar → En camino →
+Entregado y cobrado → la página del cliente mostró "Entregado" y el cobro de Q 35.00 quedó registrado. Horario vaciado al final.
 ## Entregar el restaurante a su dueño
 La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
 ```sql

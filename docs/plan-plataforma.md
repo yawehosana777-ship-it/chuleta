@@ -1,6 +1,6 @@
 # Plataforma de menús digitales multi-restaurante — Plan técnico
 
-> Estado: **Fases 1, 2 y 3 aprobadas (15-nov-2026). Fase 4 en curso: parte A (pedidos de mesa) terminada y probada; parte B (domicilio con mapa) pendiente de elegir el servicio de mapas.** Fase 2 (menú del cliente en `/r/don-chuleta` leyendo Supabase; un cambio de precio en la base apareció solo en ~1 minuto).
+> Estado: **Fases 1, 2 y 3 aprobadas (15-nov-2026). Fase 4 terminada y probada (pendiente de aprobación): A = pedidos de mesa; B = domicilio gratis solo en Malacatancito, sin mapa (decisión del dueño, 15-nov-2026).** Fase 2 (menú del cliente en `/r/don-chuleta` leyendo Supabase; un cambio de precio en la base apareció solo en ~1 minuto).
 > Lighthouse móvil (versión de producción en localhost): Accesibilidad 100, Buenas prácticas 100, SEO 100; Rendimiento 89–90 en modo simulado y 91–92 con limitación real de red/CPU. Ver `plataforma/README.md`.
 > La demo de Don Chuleta se conserva sin cambios en `demo/` como referencia visual.
 
@@ -27,7 +27,7 @@
 | Pruebas | **Vitest** (cálculos), **pgTAP/SQL** (aislamiento y permisos), **Playwright** (flujos en teléfono) | Cubre precios, seguridad y uso real. |
 | Alojamiento | **Netlify** (app) + **Supabase** (datos) | Sin servidores que mantener, HTTPS automático, publica desde GitHub en cada cambio; Next.js funciona en Netlify con su adaptador oficial. Copias de seguridad diarias en Supabase Pro. |
 | WhatsApp (Fase 5) | **WhatsApp Business Platform – Cloud API** (oficial de Meta) | Única vía autorizada. Requiere cuenta de Meta Business, número dedicado y plantillas aprobadas; Meta cobra por mensaje de plantilla según país. Se evaluará en detalle en la Fase 5. |
-| Distancia (Fase 4) | API de rutas (Google Routes u OpenRouteService) a partir de un **pin en el mapa** que marca el cliente | Las direcciones en Guatemala suelen ser imprecisas; el pin da coordenadas verificables. Nunca se inventa una distancia: si el cálculo falla, el pedido no se confirma con envío por distancia. |
+| Distancia (descartada) | API de rutas (Google Routes u OpenRouteService) a partir de un **pin en el mapa** que marca el cliente | Las direcciones en Guatemala suelen ser imprecisas; el pin da coordenadas verificables. Nunca se inventa una distancia: si el cálculo falla, el pedido no se confirma con envío por distancia. |
 
 **Costos aproximados** (verificar precios vigentes antes de contratar):
 - Desarrollo: gratis (planes gratuitos de Supabase y Netlify).

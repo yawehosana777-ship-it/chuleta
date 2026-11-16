@@ -21,6 +21,17 @@ export const ESTADO_CLIENTE: Record<EstadoPedido, string> = {
   cancelado: "Cancelado por el restaurante.",
 };
 
+export type TipoPedido = "dine_in" | "delivery";
+
+/** Mensaje para el cliente según el tipo de pedido (en domicilio, "listo" = va en camino). */
+export function estadoCliente(estado: EstadoPedido, tipo: TipoPedido) {
+  if (tipo === "delivery") {
+    if (estado === "listo") return "¡Listo! Tu pedido va en camino.";
+    if (estado === "entregado") return "Entregado. ¡Buen provecho!";
+  }
+  return ESTADO_CLIENTE[estado];
+}
+
 /** Pasos que se muestran en la línea de avance del cliente. */
 export const PASOS_CLIENTE: EstadoPedido[] = ["nuevo", "aceptado", "en_preparacion", "listo", "entregado"];
 
@@ -64,6 +75,10 @@ const ERRORES: Record<string, string> = {
   account_closed: "Esta cuenta ya estaba cerrada.",
   total_changed: "El total cambió (llegó otro pedido). Revisa la cuenta antes de cerrarla.",
   invalid_hours: "Revisa el horario: cada día necesita hora de apertura y de cierre distintas.",
+  delivery_disabled: "En este momento el restaurante no está recibiendo pedidos a domicilio desde la página.",
+  invalid_phone: "Escribe un teléfono de 8 dígitos, por ejemplo 5555-1234.",
+  invalid_customer: "Revisa tu nombre y tu dirección.",
+  below_minimum: "Tu pedido no llega al mínimo para domicilio.",
 };
 
 /** Traduce el error de la base de datos a un mensaje para la persona. */
@@ -86,6 +101,36 @@ export const esquemaPedidoMesa = z.object({
   })).min(1).max(50),
 });
 export type PedidoMesa = z.input<typeof esquemaPedidoMesa>;
+
+const telefono = z.string().trim().transform((v, ctx) => {
+  let d = v.replace(/\D/g, "");
+  if (/^502\d{8}$/.test(d)) d = d.slice(3);
+  if (!/^\d{8}$/.test(d)) {
+    ctx.addIssue({ code: "custom", message: "Escribe un teléfono de 8 dígitos, por ejemplo 5555-1234." });
+    return z.NEVER;
+  }
+  return `${d.slice(0, 4)}-${d.slice(4)}`;
+});
+
+export const esquemaPedidoDomicilio = z.object({
+  slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+  clave: z.string().regex(/^[A-Za-z0-9_-]{16,100}$/),
+  nombre: z.string().trim().min(2, "Escribe tu nombre.").max(60, "Máximo 60 caracteres."),
+  telefono,
+  direccion: z.string().trim().min(5, "Escribe tu dirección completa.").max(300, "Máximo 300 caracteres."),
+  referencias: z.string().trim().max(300, "Máximo 300 caracteres.").default(""),
+  pagaCon: z.string().trim().max(20).default(""),
+  notas: z.string().trim().max(400, "Máximo 400 caracteres.").default(""),
+  enZona: z.literal(true, "Confirma que tu dirección está dentro de la zona de entrega."),
+  lineas: esquemaPedidoMesa.shape.lineas,
+});
+export type PedidoDomicilio = z.input<typeof esquemaPedidoDomicilio>;
+
+/** "¿Con cuánto pagas?" va dentro de las notas para que quien entrega lleve cambio. */
+export function notasDomicilio(d: { pagaCon: string; notas: string }) {
+  const monto = d.pagaCon.replace(/[^\d.]/g, "");
+  return [monto && `Paga con Q ${monto}`, d.notas].filter(Boolean).join(" · ");
+}
 
 /** Lo que espera la función create_table_order (sin precios). */
 export const articulosParaBase = (lineas: z.output<typeof esquemaPedidoMesa>["lineas"]) =>

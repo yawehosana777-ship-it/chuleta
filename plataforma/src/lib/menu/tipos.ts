@@ -37,7 +37,12 @@ export type Restaurante = {
   logo: string | null;
   portada: string | null;
   tema: Tema;
+  /** null = el restaurante no ofrece domicilio desde la página. */
+  domicilio: Domicilio | null;
 };
+
+/** Condiciones de entrega a domicilio (centavos; 0 = gratis / sin mínimo). */
+export type Domicilio = { zona: string | null; envio: number; minimo: number };
 
 export type MenuPublico = { restaurante: Restaurante; categorias: Categoria[] };
 

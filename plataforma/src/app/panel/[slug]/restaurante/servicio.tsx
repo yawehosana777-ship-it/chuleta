@@ -2,23 +2,49 @@
 
 import { useActionState, useState } from "react";
 import { Casilla, Guardar, Resultado } from "@/components/panel/controles";
+import { Campo } from "@/components/ui/formulario";
 import { DIAS } from "@/lib/pedidos";
 import { guardarServicio } from "./acciones";
 
 type Dia = { abre: boolean; desde: string; hasta: string };
 
-export function FormularioServicio({ slug, mesa, horario }: { slug: string; mesa: boolean; horario: Dia[] }) {
+type Entrega = { activo: boolean; zona: string; envio: string; minimo: string };
+
+export function FormularioServicio({ slug, mesa, domicilio, horario }: { slug: string; mesa: boolean; domicilio: Entrega; horario: Dia[] }) {
   const [estado, accion] = useActionState(guardarServicio.bind(null, slug), {});
   const [dias, setDias] = useState(horario);
+  const [conDomicilio, setConDomicilio] = useState(domicilio.activo);
   const cambiar = (d: number, c: Partial<Dia>) => setDias((ds) => ds.map((x, i) => (i === d ? { ...x, ...c } : x)));
+  const e = estado.errores;
 
   return (
     <form action={accion} className="flex flex-col gap-4" noValidate>
       <Casilla name="mesa" defaultChecked={mesa} etiqueta="Recibir pedidos en mesa"
         detalle="Los clientes piden desde su teléfono escaneando el código QR de la mesa." />
+      <Casilla name="domicilio" checked={conDomicilio} onChange={(ev) => setConDomicilio(ev.target.checked)} etiqueta="Recibir pedidos a domicilio"
+        detalle="Desde la página del menú. El cliente deja nombre, teléfono y dirección, y paga en efectivo al recibir." />
+      {conDomicilio && (
+        <div className="flex flex-col gap-3 rounded-xl border border-linea p-3">
+          <Campo etiqueta="Zona de entrega" name="zona" maxLength={120} defaultValue={domicilio.zona}
+            placeholder="Ej. Solo Malacatancito" error={e?.zona} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Campo etiqueta="Costo de envío (Q)" name="envio" inputMode="decimal" defaultValue={domicilio.envio}
+              placeholder="Vacío = gratis" error={e?.envio} />
+            <Campo etiqueta="Pedido mínimo (Q)" name="minimo" inputMode="decimal" defaultValue={domicilio.minimo}
+              placeholder="Vacío = sin mínimo" error={e?.minimo} />
+          </div>
+        </div>
+      )}
+      {!conDomicilio && (
+        <>
+          <input type="hidden" name="zona" value={domicilio.zona} />
+          <input type="hidden" name="envio" value={domicilio.envio} />
+          <input type="hidden" name="minimo" value={domicilio.minimo} />
+        </>
+      )}
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-semibold">Horario de atención</legend>
+        <legend className="mb-1 text-sm font-semibold">Horario de atención (mesa y domicilio)</legend>
         <p className="mb-1 text-xs text-tenue">
           Solo se reciben pedidos dentro de este horario (hora de Guatemala). Si cierras después de medianoche,
           pon la hora de cierre del día siguiente (por ejemplo, de 18:00 a 02:00).
@@ -50,7 +76,7 @@ export function FormularioServicio({ slug, mesa, horario }: { slug: string; mesa
       </fieldset>
 
       <Resultado estado={estado} />
-      <Guardar>Guardar horario</Guardar>
+      <Guardar>Guardar pedidos y horario</Guardar>
     </form>
   );
 }

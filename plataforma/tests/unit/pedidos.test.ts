@@ -2,7 +2,9 @@
 import { describe, expect, it } from "vitest";
 import { crearLinea } from "@/lib/menu/carrito";
 import type { Producto } from "@/lib/menu/tipos";
-import { articulosParaBase, esquemaPedidoMesa, leerHorario, mensajeError, siguientesPasos } from "@/lib/pedidos";
+import {
+  articulosParaBase, esquemaPedidoDomicilio, esquemaPedidoMesa, estadoCliente, leerHorario, mensajeError, notasDomicilio, siguientesPasos,
+} from "@/lib/pedidos";
 import type { Permiso } from "@/lib/permisos";
 
 const conPermisos = (...p: Permiso[]) => (x: Permiso) => p.includes(x);
@@ -73,6 +75,31 @@ describe("horario del formulario", () => {
     const { horas, errores } = leerHorario(form({ "abre-3": "on", "desde-3": "10:00", "hasta-3": "10:00", "abre-4": "on", "desde-4": "10:00" }));
     expect(horas).toEqual([]);
     expect(Object.keys(errores)).toEqual(["dia-3", "dia-4"]);
+  });
+});
+
+describe("pedido a domicilio", () => {
+  const base = {
+    slug: "don-chuleta", clave: "d".repeat(36), nombre: "Ana", telefono: "+502 5555 1234", direccion: "Barrio El Centro, casa 12",
+    referencias: "", pagaCon: "100", notas: "Tocar el timbre", enZona: true as const,
+    lineas: [{ productoId: ID, cantidad: 1, opciones: [] }],
+  };
+
+  it("normaliza el teléfono y pone el monto de pago en las notas", () => {
+    const d = esquemaPedidoDomicilio.parse(base);
+    expect(d.telefono).toBe("5555-1234");
+    expect(notasDomicilio(d)).toBe("Paga con Q 100 · Tocar el timbre");
+  });
+
+  it("exige confirmar la zona, un teléfono válido y la dirección", () => {
+    expect(esquemaPedidoDomicilio.safeParse({ ...base, enZona: false }).success).toBe(false);
+    expect(esquemaPedidoDomicilio.safeParse({ ...base, telefono: "1234" }).success).toBe(false);
+    expect(esquemaPedidoDomicilio.safeParse({ ...base, direccion: "" }).success).toBe(false);
+  });
+
+  it("en domicilio, 'listo' se le dice al cliente como 'va en camino'", () => {
+    expect(estadoCliente("listo", "delivery")).toMatch(/camino/);
+    expect(estadoCliente("listo", "dine_in")).toMatch(/mesa/);
   });
 });
 

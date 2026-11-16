@@ -12,6 +12,16 @@ import { DIAS } from "@/lib/pedidos";
 
 export const metadata: Metadata = { title: "Restaurante" };
 
+type Entrega = { fixed_fee_cents: number | null; min_order_cents: number; area_note: string | null };
+type FilaRestaurante = {
+  name: string; description: string | null; address: string | null; phone: string | null; whatsapp: string | null;
+  theme: unknown; logo_path: string | null; cover_path: string | null; dine_in_enabled: boolean; delivery_enabled: boolean;
+  delivery_settings: Entrega | Entrega[] | null;
+};
+
+/** Centavos → texto del formulario ("15.00"); 0 o vacío → "" (gratis / sin mínimo). */
+const monto = (c: number | null | undefined) => (c ? (c / 100).toFixed(2) : "");
+
 // Página privada: espera a confirmar sesión y permisos.
 export const instant = false;
 
@@ -22,11 +32,13 @@ export default async function PaginaRestaurante({ params }: PageProps<"/panel/[s
 
   const [{ data: r }, { data: horas }] = await Promise.all([
     ctx.supabase.from("restaurants")
-      .select("name, description, address, phone, whatsapp, theme, logo_path, cover_path, dine_in_enabled").eq("id", ctx.restaurante.id).single(),
+      .select("name, description, address, phone, whatsapp, theme, logo_path, cover_path, dine_in_enabled, delivery_enabled, delivery_settings(fixed_fee_cents, min_order_cents, area_note)")
+      .eq("id", ctx.restaurante.id).single<FilaRestaurante>(),
     ctx.supabase.from("opening_hours").select("weekday, opens_at, closes_at")
       .eq("restaurant_id", ctx.restaurante.id).eq("service", "dine_in").order("opens_at"),
   ]);
   if (!r) return null;
+  const entrega = Array.isArray(r.delivery_settings) ? r.delivery_settings[0] : r.delivery_settings;
   // Un tramo por día en el formulario ("HH:MM:SS" → "HH:MM").
   const horario = DIAS.map((_, d) => {
     const h = horas?.find((x) => x.weekday === d);
@@ -50,7 +62,9 @@ export default async function PaginaRestaurante({ params }: PageProps<"/panel/[s
       }} />
       <section className="rounded-2xl border border-linea bg-superficie p-4" aria-labelledby="t-servicio">
         <h2 id="t-servicio" className="mb-4 font-semibold">Pedidos y horario</h2>
-        <FormularioServicio slug={slug} mesa={r.dine_in_enabled} horario={horario} />
+        <FormularioServicio slug={slug} mesa={r.dine_in_enabled} horario={horario} domicilio={{
+          activo: r.delivery_enabled, zona: entrega?.area_note ?? "", envio: monto(entrega?.fixed_fee_cents), minimo: monto(entrega?.min_order_cents),
+        }} />
       </section>
     </div>
   );

@@ -15,8 +15,9 @@ export const metadata: Metadata = { title: "Pedidos" };
 export const instant = false;
 
 type Pedido = {
-  id: string; number: number; status: EstadoPedido; version: number; created_at: string;
-  customer_name: string | null; notes: string | null; total_cents: number;
+  id: string; number: number; type: "dine_in" | "delivery"; status: EstadoPedido; version: number; created_at: string;
+  customer_name: string | null; customer_phone: string | null; delivery_address: string | null; delivery_references: string | null;
+  notes: string | null; delivery_fee_cents: number; total_cents: number;
   table_accounts: { tables: { label: string } | null } | null;
   order_items: { product_name: string; quantity: number; options: { name: string }[]; notes: string | null; line_total_cents: number }[];
 };
@@ -62,10 +63,10 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
             <li key={p.id} className={`rounded-2xl border p-4 ${COLOR[p.status]}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-lg font-bold">
-                  #{p.number} · {p.table_accounts?.tables?.label ?? "Sin mesa"}
+                  #{p.number} · {lugar(p)}
                   {p.customer_name && <span className="text-sm font-normal text-tenue"> · {p.customer_name}</span>}
                 </p>
-                <p className="text-sm text-tenue">{hora.format(new Date(p.created_at))} · <b className="text-crema">{NOMBRE_ESTADO[p.status]}</b></p>
+                <p className="text-sm text-tenue">{hora.format(new Date(p.created_at))} · <b className="text-crema">{nombreEstado(p)}</b></p>
               </div>
               <ul className="mt-2 flex flex-col gap-1 text-sm">
                 {p.order_items.map((i, n) => (
@@ -76,14 +77,28 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
                   </li>
                 ))}
               </ul>
+              {p.type === "delivery" && (
+                <div className="mt-2 rounded-lg border border-linea bg-superficie-2 px-3 py-2 text-sm">
+                  <p>{p.delivery_address}</p>
+                  {p.delivery_references && <p className="text-xs text-tenue">{p.delivery_references}</p>}
+                  {p.customer_phone && (
+                    <a href={`tel:${p.customer_phone.replace(/\D/g, "")}`} className="mt-1 inline-block font-semibold text-dorado underline">
+                      Llamar · {p.customer_phone}
+                    </a>
+                  )}
+                </div>
+              )}
               {p.notes && <p className="mt-2 rounded-lg bg-superficie-2 px-3 py-2 text-xs">Notas: {p.notes}</p>}
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="font-semibold">{Q(p.total_cents)}</span>
+                <span className="font-semibold">
+                  {Q(p.total_cents)}
+                  {p.type === "delivery" && <span className="text-xs font-normal text-tenue"> · envío {p.delivery_fee_cents ? Q(p.delivery_fee_cents) : "gratis"} · cobrar en efectivo</span>}
+                </span>
                 <div className="flex flex-wrap gap-2">
                   {siguientesPasos(p.status, ctx.puede).map((s) => (
                     <BotonAccion key={s.a} accion={cambiarEstado.bind(null, slug, p.id, s.a, p.version)}
                       className={s.a === "aceptado" ? "border-dorado/60 bg-dorado/20" : ""}>
-                      {s.etiqueta}
+                      {p.type === "delivery" && s.a === "listo" ? "En camino" : p.type === "delivery" && s.a === "entregado" ? "Entregado y cobrado" : s.etiqueta}
                     </BotonAccion>
                   ))}
                 </div>
@@ -105,7 +120,7 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
           <ul className="mt-3 flex flex-col gap-2 text-sm">
             {terminados.map((p) => (
               <li key={p.id} className="flex justify-between gap-3">
-                <span>#{p.number} · {p.table_accounts?.tables?.label ?? "Sin mesa"} · {hora.format(new Date(p.created_at))}</span>
+                <span>#{p.number} · {lugar(p)} · {hora.format(new Date(p.created_at))}</span>
                 <span className={p.status === "cancelado" ? "text-red-300" : "text-tenue"}>{NOMBRE_ESTADO[p.status]} · {Q(p.total_cents)}</span>
               </li>
             ))}
@@ -121,7 +136,7 @@ function leerDatos(ctx: NonNullable<ContextoPanel>) {
   const desde = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
   return Promise.all([
     ctx.supabase.from("orders")
-      .select("id, number, status, version, created_at, customer_name, notes, total_cents, table_accounts(tables(label)), order_items(product_name, quantity, options, notes, line_total_cents)")
+      .select("id, number, type, status, version, created_at, customer_name, customer_phone, delivery_address, delivery_references, notes, delivery_fee_cents, total_cents, table_accounts(tables(label)), order_items(product_name, quantity, options, notes, line_total_cents)")
       .eq("restaurant_id", ctx.restaurante.id)
       .or(`status.in.(nuevo,aceptado,en_preparacion,listo),created_at.gte.${desde}`)
       .order("created_at", { ascending: true }).limit(150).returns<Pedido[]>(),
@@ -129,6 +144,9 @@ function leerDatos(ctx: NonNullable<ContextoPanel>) {
     ctx.supabase.from("opening_hours").select("id", { count: "exact", head: true }).eq("restaurant_id", ctx.restaurante.id).eq("service", "dine_in"),
   ]);
 }
+
+const nombreEstado = (p: Pedido) => (p.type === "delivery" && p.status === "listo" ? "En camino" : NOMBRE_ESTADO[p.status]);
+const lugar = (p: Pedido) => (p.type === "delivery" ? "A domicilio" : p.table_accounts?.tables?.label ?? "Sin mesa");
 
 function Aviso({ children }: { children: React.ReactNode }) {
   return <p className="rounded-2xl border border-dorado/40 bg-dorado/10 px-4 py-3 text-sm">{children}</p>;
