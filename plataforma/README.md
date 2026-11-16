@@ -21,7 +21,7 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Panel de pedidos y mesas, horario, pausa, cierre de cuenta en efectivo | ✅ Fase 4A |
 | Pedidos a domicilio (gratis, solo Malacatancito, efectivo al recibir) | ✅ Fase 4B · desde `/r/<slug>` |
 | Aviso en vivo con sonido, pantalla de cocina por áreas, encargado, avisos de atraso | ✅ Fase 5 |
-| WhatsApp oficial | ⏸ Pendiente de aprobación del dueño (tiene costo) |
+| WhatsApp oficial | ✖ No se usa (decisión del dueño, 15-nov-2026) |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
 | Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 
@@ -156,7 +156,7 @@ Entregado y cobrado → la página del cliente mostró "Entregado" y el cobro de
 - **Atrasos:** "Hace X min" y "Atrasado" en rojo según los minutos del restaurante (valores iniciales 5 para aceptar y 25 para
   tenerlo listo; se cambian en el panel). Los nuevos sin aceptar vuelven a sonar cada minuto. Los minutos se calculan con la
   hora del servidor, aunque el reloj del aparato esté mal.
-- **WhatsApp oficial:** no incluido; requiere la aprobación del dueño (cuenta de Meta Business, número dedicado, costo por mensaje).
+- **WhatsApp oficial:** no se usa (decisión del dueño, 15-nov-2026). El cliente sigue su pedido en su página y el restaurante recibe el aviso en el panel.
 
 ### Prueba realizada (15-nov-2026)
 Panel "En vivo" → pedido de mesa desde otra pestaña: el aviso apareció en **0.83 s** (pedido #3); pedido a domicilio: **1.06 s**
