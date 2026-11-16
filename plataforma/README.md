@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fases 1, 2 y 3
+# Plataforma de menús digitales — Fases 1 a 3 y 4A
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -17,7 +17,9 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Bienvenida, portada, buscador, categorías, detalle con opciones | ✅ Fase 2 |
 | Carrito y resumen para mostrar al mesero (no se envía ni se guarda) | ✅ Fase 2 |
 | Plantillas de tema (`parrilla`, `claro`, `campo`) y colores propios validados | ✅ Fase 2 |
-| Enviar pedidos en línea | ⏳ Fase 4 |
+| Pedidos de mesa por código QR, cuenta compartida, seguimiento del cliente | ✅ Fase 4A · `/r/<slug>/mesa/<código>` |
+| Panel de pedidos y mesas, horario, pausa, cierre de cuenta en efectivo | ✅ Fase 4A |
+| Pedidos a domicilio con mapa y costo de envío | ⏳ Fase 4B |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
 | Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 
@@ -40,10 +42,11 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 6. **Fase 2:** ejecutar `supabase/sql-editor/04-fase-2.sql` (íconos y fotos por categoría) y luego
    `05-presentacion-don-chuleta.sql` (dirección, logo, portada, tema). El segundo se puede repetir.
 7. **Fase 3:** ejecutar `supabase/sql-editor/06-fase-3.sql` (espacio de fotos `menu` y funciones de empleados).
+8. **Fase 4A:** ejecutar `supabase/sql-editor/07-fase-4a.sql` (pedidos de mesa, horario, estados y cierre de cuenta).
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600`
 
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
@@ -96,6 +99,28 @@ npm run dev
 3. Empleado: al entrar fue obligado a cambiar la contraseña (abrir el menú directo lo regresaba); después vio solo
    la pestaña Menú. Restaurante y Empleados → "No autorizado".
 4. Dueño: lo desactivó → el empleado recibe 404 en el panel.
+## Pedidos de mesa (Fase 4A)
+- **Cliente:** escanea el QR de su mesa → `/r/<slug>/mesa/<código>` (código aleatorio de 24 caracteres, no se puede adivinar).
+  Arma su pedido con observaciones por producto, nombre y notas opcionales, y lo envía. Pasa a `/pedido/<código-secreto>`,
+  que se actualiza cada 15 s y muestra la cuenta de la mesa. Pago **solo en efectivo** con el mesero.
+- **La base de datos manda** (`create_table_order`): el teléfono solo envía producto, cantidad, opciones y notas.
+  Precios, agotados, opciones obligatorias, horario y pausa se revisan ahí. Una clave por envío evita duplicados.
+  Varios teléfonos en la misma mesa suman a una sola cuenta abierta.
+- **Panel › Pedidos** (`orders.view`): se actualiza cada 10 s. Aceptar (`orders.accept`) → En preparación / Listo / Entregado
+  (`orders.update`, solo hacia adelante). Cancelar (`orders.cancel`) exige motivo. Si dos personas tocan el mismo pedido,
+  solo vale el primer cambio (número de versión). Interruptor para pausar pedidos (`settings.edit`).
+- **Panel › Mesas** (`tables.manage`): crear y desactivar mesas, ver y descargar su QR, cerrar la cuenta cuando se cobra en
+  efectivo. No se cierra si hay pedidos sin entregar o si el total cambió desde que se vio.
+- **Panel › Restaurante › Pedidos y horario:** pedidos en mesa sí/no y horario por día (puede cruzar la medianoche).
+  **Sin horario no se reciben pedidos** (no se supone ninguno). El horario real de Don Chuleta está pendiente.
+- Los QR apuntan a `NEXT_PUBLIC_SITE_URL`: en `localhost` no sirven en un teléfono. Imprimirlos hasta tener el dominio (Fase 8).
+- Las alertas con sonido y la pantalla de cocina en tiempo real son de la Fase 5; por ahora el panel se refresca solo.
+
+### Prueba realizada (15-nov-2026)
+Horario temporal 00:00–23:59 → "Mesa de prueba" → pedido #1 desde el teléfono (Chuleta con "bien cocida, sin cebollín",
+Q 30.00) → el panel lo mostró → Aceptar (la página del cliente cambió sola) → Listo → Entregado → Mesas: "Cobrado en
+efectivo · Cerrar cuenta" → el cliente ve "La cuenta de esta mesa ya se cerró". Pausa: el menú de la mesa avisó que
+los pedidos están pausados. Al terminar se reanudaron los pedidos y se dejó el horario vacío.
 ## Entregar el restaurante a su dueño
 La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
 ```sql

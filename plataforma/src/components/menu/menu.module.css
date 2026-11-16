@@ -514,6 +514,44 @@
   border-radius: 12px;
 }
 
+/* Pedido de mesa: observaciones, nombre y envío */
+.campo { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; font-size: 13px; font-weight: 700; }
+.campo small { font-weight: 400; color: var(--m-tenue); }
+.campo textarea, .campo input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--m-linea);
+  background: var(--m-superficie-2);
+  color: var(--m-texto);
+  font: inherit;
+  font-weight: 400;
+  font-size: 16px;
+  resize: vertical;
+}
+.campo textarea:focus-visible, .campo input:focus-visible { outline: 2px solid var(--m-resalte); outline-offset: 1px; }
+.formEnvio { padding: 0 16px 8px; }
+.mesa {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--m-resalte);
+  background: color-mix(in srgb, var(--m-resalte) 14%, transparent);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.errorEnvio {
+  margin: 12px 16px 0;
+  font-size: 13px;
+  color: var(--m-texto);
+  background: rgb(239 68 68 / 0.12);
+  border: 1px solid rgb(248 113 113 / 0.35);
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+.lineaNota { display: block; font-size: 12px; color: var(--m-tenue); font-style: italic; }
+
 /* Aviso breve "agregado" */
 .avisoFlotante {
   position: fixed;

@@ -1,6 +1,6 @@
 // Cálculos del carrito del cliente. Solo sirven para MOSTRAR totales:
-// cuando existan los pedidos en línea (Fase 4), el servidor recalcula todo
-// con los precios de la base de datos e ignora lo que mande el navegador.
+// al enviar un pedido, la base de datos recalcula todo con sus precios
+// e ignora lo que mande el navegador.
 import type { GrupoOpciones, Producto } from "./tipos";
 
 /** Opciones elegidas: id del grupo → ids de las opciones. */
@@ -11,9 +11,14 @@ export type LineaCarrito = {
   productoId: string;
   nombre: string;
   detalle: string[];
+  opciones: string[];
+  /** Observaciones del cliente ("sin cebolla"). */
+  nota: string;
   precioUnitario: number;
   cantidad: number;
 };
+
+export const NOTA_MAXIMA = 200;
 
 export const CANTIDAD_MAXIMA = 20;
 
@@ -43,15 +48,19 @@ export function sePuedePedir(p: Producto) {
   return p.precio !== null && !p.agotado;
 }
 
-export function crearLinea(p: Producto, eleccion: Eleccion, cantidad: number): LineaCarrito | null {
+export function crearLinea(p: Producto, eleccion: Eleccion, cantidad: number, nota = ""): LineaCarrito | null {
   if (!sePuedePedir(p) || !eleccionCompleta(p.grupos, eleccion)) return null;
   const elegidas = p.grupos.flatMap((g) => g.opciones.filter((o) => (eleccion[g.id] ?? []).includes(o.id)));
   const ids = elegidas.map((o) => o.id).sort();
+  const notaLimpia = nota.trim().slice(0, NOTA_MAXIMA);
   return {
-    clave: [p.id, ...ids].join("|"),
+    // Misma combinación y misma nota = misma línea (se suma la cantidad).
+    clave: [p.id, ...ids, notaLimpia].join("|"),
     productoId: p.id,
     nombre: p.nombre,
     detalle: elegidas.map((o) => o.nombre),
+    opciones: ids,
+    nota: notaLimpia,
     precioUnitario: p.precio! + elegidas.reduce((s, o) => s + o.extra, 0),
     cantidad: Math.min(Math.max(1, Math.trunc(cantidad)), CANTIDAD_MAXIMA),
   };

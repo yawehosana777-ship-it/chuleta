@@ -8,16 +8,16 @@ export type Rol = "owner" | "manager" | "staff";
 
 export const NOMBRE_ROL: Record<Rol, string> = { owner: "Dueño", manager: "Gerente", staff: "Personal" };
 
-/** Descripción para el dueño. Los de pedidos y mesas se usarán desde la Fase 4. */
+/** Descripción para el dueño. */
 export const DESCRIPCION_PERMISO: Record<Permiso, { nombre: string; detalle: string; fase?: number }> = {
   "menu.edit": { nombre: "Editar el menú", detalle: "Productos, precios, fotos y agotados." },
-  "settings.edit": { nombre: "Datos del restaurante", detalle: "Nombre, dirección, logo y colores." },
+  "settings.edit": { nombre: "Datos del restaurante", detalle: "Nombre, dirección, logo, colores, horario y pausa de pedidos." },
   "staff.manage": { nombre: "Administrar empleados", detalle: "Solo dueño y gerentes." },
-  "orders.view": { nombre: "Ver pedidos", detalle: "Lista de pedidos.", fase: 4 },
-  "orders.accept": { nombre: "Aceptar pedidos", detalle: "Mandar pedidos a cocina.", fase: 4 },
-  "orders.update": { nombre: "Actualizar pedidos", detalle: "Preparación, listo, entregado.", fase: 4 },
-  "orders.cancel": { nombre: "Cancelar pedidos", detalle: "Con motivo obligatorio.", fase: 4 },
-  "tables.manage": { nombre: "Mesas", detalle: "Crear mesas y cerrar cuentas.", fase: 4 },
+  "orders.view": { nombre: "Ver pedidos", detalle: "Lista de pedidos que llegan." },
+  "orders.accept": { nombre: "Aceptar pedidos", detalle: "Mandar pedidos nuevos a cocina." },
+  "orders.update": { nombre: "Actualizar pedidos", detalle: "En preparación, listo, entregado." },
+  "orders.cancel": { nombre: "Cancelar pedidos", detalle: "Con motivo obligatorio." },
+  "tables.manage": { nombre: "Mesas", detalle: "Crear mesas, códigos QR y cerrar cuentas (cobro en efectivo)." },
   "reports.view": { nombre: "Informes", detalle: "Ventas y estadísticas.", fase: 6 },
 };
 

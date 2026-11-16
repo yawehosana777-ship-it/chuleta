@@ -1,14 +1,14 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
-import type { MenuPublico } from "@/lib/menu/tipos";
+import type { MenuPublico, MesaCliente } from "@/lib/menu/tipos";
 import { variablesTema } from "@/lib/menu/temas";
 import { allura, oswald } from "./fuentes";
 import { IconoFlecha, IconoUbicacion } from "./iconos";
 import { MenuInteractivo } from "./menu-interactivo";
 import s from "./menu.module.css";
 
-/** Página completa del menú del cliente: bienvenida, portada y menú. */
-export function VistaMenu({ menu }: { menu: MenuPublico }) {
+/** Página completa del menú del cliente: bienvenida, portada y menú. Con mesa, se puede pedir. */
+export function VistaMenu({ menu, mesa }: { menu: MenuPublico; mesa?: MesaCliente }) {
   const { restaurante: r } = menu;
   return (
     <div className={`${s.pagina} ${allura.variable} ${oswald.variable}`} style={variablesTema(r.tema.colores) as CSSProperties}>
@@ -51,7 +51,7 @@ export function VistaMenu({ menu }: { menu: MenuPublico }) {
           {r.tema.lema && <p className={s.lema}>{r.tema.lema}</p>}
         </header>
 
-        <MenuInteractivo restaurante={r} categorias={menu.categorias} />
+        <MenuInteractivo restaurante={r} categorias={menu.categorias} mesa={mesa} />
       </div>
     </div>
   );

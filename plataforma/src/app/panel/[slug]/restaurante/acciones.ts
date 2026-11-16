@@ -1,6 +1,7 @@
 "use server";
 
 import { PLANTILLAS } from "@/lib/menu/temas";
+import { leerHorario, mensajeError } from "@/lib/pedidos";
 import type { EstadoFormulario } from "@/lib/validaciones";
 import { esquemaRestaurante } from "@/lib/validaciones-panel";
 import { intentar, leer, refrescarMenu, revisar } from "@/server/panel/comun";
@@ -27,6 +28,26 @@ export async function guardarRestaurante(slug: string, _p: EstadoFormulario, dat
     if (!data?.length) return { error: "No se encontró el restaurante." };
     refrescarMenu(slug);
     return { exito: "Datos guardados. El menú ya muestra los cambios." };
+  });
+}
+
+/** Pedidos en mesa (sí/no) y horario de atención. Sin horario no se reciben pedidos. */
+export async function guardarServicio(slug: string, _p: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  return intentar(async () => {
+    const ctx = await contextoAccion(slug, "settings.edit");
+    const { horas, errores } = leerHorario(datos);
+    if (Object.keys(errores).length) return { errores, error: "Revisa el horario marcado." };
+
+    const { error: e1 } = await ctx.supabase.rpc("set_opening_hours", { p_restaurant: ctx.restaurante.id, p_service: "dine_in", p_hours: horas });
+    if (e1?.message?.includes("invalid_hours")) return { error: mensajeError(e1.message) };
+    const f1 = revisar(e1);
+    if (f1) return f1;
+
+    const { error: e2 } = await ctx.supabase.from("restaurants")
+      .update({ dine_in_enabled: datos.get("mesa") === "on" }).eq("id", ctx.restaurante.id);
+    const f2 = revisar(e2);
+    if (f2) return f2;
+    return { exito: horas.length ? "Horario guardado." : "Guardado. Sin días marcados, no se reciben pedidos desde el teléfono." };
   });
 }
 

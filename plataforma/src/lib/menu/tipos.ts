@@ -40,3 +40,6 @@ export type Restaurante = {
 };
 
 export type MenuPublico = { restaurante: Restaurante; categorias: Categoria[] };
+
+/** Mesa desde la que se abrió el menú (código QR). */
+export type MesaCliente = { codigo: string; etiqueta: string; estado: "abierto" | "cerrado" | "pausado" | "sin_servicio" };

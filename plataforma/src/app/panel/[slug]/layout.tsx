@@ -14,6 +14,8 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
   await exigirContrasenaPropia(ctx.supabase, ctx.usuarioId);
 
   const secciones = [
+    ctx.puede("orders.view") && { ruta: "pedidos", nombre: "Pedidos" },
+    ctx.puede("tables.manage") && { ruta: "mesas", nombre: "Mesas" },
     ctx.puede("menu.edit") && { ruta: "menu", nombre: "Menú" },
     ctx.puede("settings.edit") && { ruta: "restaurante", nombre: "Restaurante" },
     ctx.puede("staff.manage") && { ruta: "empleados", nombre: "Empleados" },
@@ -44,7 +46,7 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
       <div className="pt-6">
         {secciones.length === 0 ? (
           <p className="rounded-xl border border-dashed border-dorado/30 px-4 py-3 text-sm text-tenue">
-            Tu usuario todavía no tiene permisos en el panel. Las pantallas de pedidos para el personal llegan en las Fases 4 y 5.
+            Tu usuario todavía no tiene permisos en el panel. Pídele al dueño que te asigne los que necesites.
           </p>
         ) : children}
       </div>
