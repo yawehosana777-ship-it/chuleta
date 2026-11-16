@@ -28,5 +28,6 @@ export function rutaInternaSegura(valor: unknown, porDefecto = "/panel") {
 
 export type EstadoFormulario = {
   error?: string;
+  exito?: string;
   errores?: Record<string, string[] | undefined>;
 };

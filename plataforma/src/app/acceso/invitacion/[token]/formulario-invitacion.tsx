@@ -1,11 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Aviso, BotonEnviar, Campo } from "@/components/ui/formulario";
 import { aceptarInvitacion } from "./acciones";
 
 export function FormularioInvitacion({ token, email }: { token: string; email: string }) {
   const [estado, accion] = useActionState(aceptarInvitacion.bind(null, token), {});
+  if (estado.exito) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Aviso tipo="info">{estado.exito}</Aviso>
+        <Link href="/acceso" className="text-sm font-semibold text-dorado underline-offset-4 hover:underline">
+          Ir a iniciar sesión
+        </Link>
+      </div>
+    );
+  }
   return (
     <form action={accion} className="flex flex-col gap-5" noValidate>
       {estado.error && <Aviso>{estado.error}</Aviso>}

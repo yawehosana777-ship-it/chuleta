@@ -4,8 +4,8 @@ import { Suspense } from "react";
 import { Cargando } from "@/components/ui/cargando";
 import { Aviso } from "@/components/ui/formulario";
 import { TarjetaAcceso } from "@/components/ui/tarjeta-acceso";
-import { hashToken, tokenConFormatoValido } from "@/lib/invitaciones";
-import { clienteAdmin } from "@/lib/supabase/admin";
+import { tokenConFormatoValido } from "@/lib/invitaciones";
+import { clienteServidor } from "@/lib/supabase/servidor";
 import { FormularioInvitacion } from "./formulario-invitacion";
 
 export const metadata: Metadata = { title: "Invitación", robots: { index: false } };
@@ -25,9 +25,8 @@ async function Invitacion({ params }: Pick<PageProps<"/acceso/invitacion/[token]
 
   let vista: Vista | null = null;
   if (tokenConFormatoValido(token)) {
-    const { data } = await clienteAdmin()
-      .rpc("invitation_preview", { p_token_hash: hashToken(token) })
-      .maybeSingle<Vista>();
+    const supabase = await clienteServidor();
+    const { data } = await supabase.rpc("invitation_preview_by_token", { p_token: token }).maybeSingle<Vista>();
     vista = data;
   }
 

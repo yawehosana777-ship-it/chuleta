@@ -10,11 +10,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "vitest run tests/db",
+    "claves:configurar": "node scripts/configurar-claves.mjs",
     "db:vincular": "supabase link --project-ref uqwojpsvrfoqsfaldkhj",
     "db:aplicar": "supabase db push",
     "restaurante:crear": "node --env-file=.env.local --import tsx scripts/crear-restaurante.mts",
     "restaurante:invitar": "node --env-file=.env.local --import tsx scripts/invitar.mts",
     "restaurante:estado": "node --env-file=.env.local --import tsx scripts/estado-restaurante.mts",
+    "carta:sql": "tsx scripts/generar-sql-carta.mts",
     "carta:cargar": "node --env-file=.env.local --import tsx scripts/cargar-carta.mts"
   },
   "dependencies": {
