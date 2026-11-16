@@ -40,7 +40,8 @@ export default async function PaginaMesas({ params }: PageProps<"/panel/[slug]/m
 
   return (
     <div className="flex flex-col gap-8">
-      <Actualizar segundos={20} />
+      {/* Respaldo por si se corta la conexión en vivo. */}
+      <Actualizar segundos={30} />
       {base.includes("localhost") && (
         <p className="rounded-2xl border border-dorado/30 bg-dorado/5 px-4 py-3 text-sm text-tenue">
           Estos códigos apuntan a <b className="text-crema">{base}</b>, que solo abre en esta computadora. Funcionarán en los teléfonos

@@ -46,6 +46,24 @@ export async function cancelarPedido(slug: string, pedidoId: string, version: nu
   });
 }
 
+/** "Me encargo" (tomar = true) o "Soltar". La base de datos decide quién puede. */
+export async function tomarPedido(slug: string, pedidoId: string, tomar: boolean): Promise<EstadoFormulario> {
+  return intentar(async () => {
+    const ctx = await contextoAccion(slug, "orders.view");
+    if (!ctx.puede("orders.accept") && !ctx.puede("orders.update")) throw new NoAutorizado();
+    const id = uuid.parse(pedidoId);
+    const { data: propio } = await ctx.supabase.from("orders").select("id").eq("id", id).eq("restaurant_id", ctx.restaurante.id).maybeSingle();
+    if (!propio) return { error: "No se encontró el pedido." };
+    const { error } = await ctx.supabase.rpc("assign_order", { p_order: id, p_tomar: tomar === true });
+    if (error) {
+      if (error.code === "42501" || error.message?.includes("not_authorized")) throw new NoAutorizado();
+      refresh();
+      return { error: mensajeError(error.message) };
+    }
+    return { exito: tomar ? "Ahora te encargas de este pedido." : "Pedido liberado." };
+  });
+}
+
 /** Pausar o reanudar los pedidos desde el teléfono (por ejemplo, cocina saturada). */
 export async function pausarPedidos(slug: string, pausar: boolean): Promise<EstadoFormulario> {
   return intentar(async () => {

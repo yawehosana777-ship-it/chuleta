@@ -47,7 +47,17 @@ export function siguientesPasos(estado: EstadoPedido, puede: (p: Permiso) => boo
   return [];
 }
 
-export const puedeCancelar = (estado: EstadoPedido, puede: (p: Permiso) => boolean) => !terminado(estado) && puede("orders.cancel");
+/**
+ * Minutos después de los que un pedido se marca "Atrasado":
+ * nuevo sin aceptar → límite para aceptar; aceptado o en preparación → límite para tenerlo listo.
+ */
+export function limiteAtraso(estado: EstadoPedido, limites: { aceptar: number; preparar: number }) {
+  if (estado === "nuevo") return limites.aceptar;
+  if (estado === "aceptado" || estado === "en_preparacion") return limites.preparar;
+  return null;
+}
+
+export const puedeCancelar =(estado: EstadoPedido, puede: (p: Permiso) => boolean) => !terminado(estado) && puede("orders.cancel");
 
 // Estado de la mesa que devuelve table_by_qr.
 export type EstadoMesa = "abierto" | "cerrado" | "pausado" | "sin_servicio";
@@ -79,6 +89,7 @@ const ERRORES: Record<string, string> = {
   invalid_phone: "Escribe un teléfono de 8 dígitos, por ejemplo 5555-1234.",
   invalid_customer: "Revisa tu nombre y tu dirección.",
   below_minimum: "Tu pedido no llega al mínimo para domicilio.",
+  already_assigned: "Otra persona ya se encargó de este pedido.",
 };
 
 /** Traduce el error de la base de datos a un mensaje para la persona. */

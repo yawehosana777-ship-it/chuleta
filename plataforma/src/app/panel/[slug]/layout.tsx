@@ -3,6 +3,7 @@ import { cerrarSesion } from "@/app/acceso/acciones";
 import { NOMBRE_ROL } from "@/lib/permisos";
 import { contextoPagina } from "@/server/panel/contexto";
 import { exigirContrasenaPropia } from "@/server/panel/perfil";
+import { AlertaPedidos } from "@/components/panel/alerta-pedidos";
 import { Navegacion } from "./navegacion";
 
 // Panel privado: espera a confirmar sesión y permisos antes de mostrar nada.
@@ -15,6 +16,7 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
 
   const secciones = [
     ctx.puede("orders.view") && { ruta: "pedidos", nombre: "Pedidos" },
+    ctx.puede("orders.view") && { ruta: "cocina", nombre: "Cocina" },
     ctx.puede("tables.manage") && { ruta: "mesas", nombre: "Mesas" },
     ctx.puede("menu.edit") && { ruta: "menu", nombre: "Menú" },
     ctx.puede("settings.edit") && { ruta: "restaurante", nombre: "Restaurante" },
@@ -41,6 +43,7 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
             </form>
           </div>
         </div>
+        {ctx.puede("orders.view") && <AlertaPedidos slug={slug} restauranteId={ctx.restaurante.id} />}
         {secciones.length > 0 && <Navegacion slug={slug} secciones={secciones} />}
       </header>
       <div className="pt-6">

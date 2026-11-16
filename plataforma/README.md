@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fases 1 a 4
+# Plataforma de menús digitales — Fases 1 a 5
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -20,6 +20,8 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Pedidos de mesa por código QR, cuenta compartida, seguimiento del cliente | ✅ Fase 4A · `/r/<slug>/mesa/<código>` |
 | Panel de pedidos y mesas, horario, pausa, cierre de cuenta en efectivo | ✅ Fase 4A |
 | Pedidos a domicilio (gratis, solo Malacatancito, efectivo al recibir) | ✅ Fase 4B · desde `/r/<slug>` |
+| Aviso en vivo con sonido, pantalla de cocina por áreas, encargado, avisos de atraso | ✅ Fase 5 |
+| WhatsApp oficial | ⏸ Pendiente de aprobación del dueño (tiene costo) |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
 | Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 
@@ -44,10 +46,11 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 7. **Fase 3:** ejecutar `supabase/sql-editor/06-fase-3.sql` (espacio de fotos `menu` y funciones de empleados).
 8. **Fase 4A:** ejecutar `supabase/sql-editor/07-fase-4a.sql` (pedidos de mesa, horario, estados y cierre de cuenta).
 9. **Fase 4B:** ejecutar `supabase/sql-editor/08-fase-4b.sql` (pedidos a domicilio).
+10. **Fase 5:** ejecutar `supabase/sql-editor/09-fase-5.sql` (tiempo real de pedidos, áreas, encargado, avisos de atraso).
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700 20261116000800`
 
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
@@ -139,6 +142,26 @@ los pedidos están pausados. Al terminar se reanudaron los pedidos y se dejó el
 Domicilio activado + horario temporal → pedido #2 desde el menú general (Hamburguesa Simple, datos ficticios, "Paga con Q 100")
 → sin datos el formulario marcó cada campo → enviado: "Envío Gratis", total Q 35.00 → panel: Aceptar → En camino →
 Entregado y cobrado → la página del cliente mostró "Entregado" y el cobro de Q 35.00 quedó registrado. Horario vaciado al final.
+## Operación (Fase 5)
+- **Aviso en vivo:** el panel se suscribe a `orders` con Supabase Realtime (`src/components/panel/alerta-pedidos.tsx`) usando
+  la clave pública y la sesión del empleado: RLS decide qué pedidos recibe. Al llegar uno: sonido (generado en el navegador,
+  sin archivos), vibración, letrero "Pedido nuevo #N" y "(N)" en el título. El navegador exige **tocar la pantalla una vez**
+  para permitir el sonido (botón "Toca para activar el sonido"). Si se corta la conexión en vivo, la lista se actualiza cada 30 s.
+- **Cocina** (`/panel/<slug>/cocina`, `orders.view`): pedidos aceptados y en preparación, letra grande, botones Empezar / Listo
+  (`orders.update`). Con un área elegida muestra solo lo de esa área; «Listo» marca el pedido completo.
+- **Áreas** (Restaurante › Áreas y avisos): p. ej. Cocina y Barra; cada categoría del menú se asigna a un área
+  (clave compuesta: no se puede usar un área de otro restaurante).
+- **Encargado:** "Me encargo" / "Soltar" (`assign_order`); nadie más puede tomar un pedido ya tomado; el dueño o el gerente
+  pueden liberarlo. Filtros Todos / Míos / Sin encargado.
+- **Atrasos:** "Hace X min" y "Atrasado" en rojo según los minutos del restaurante (valores iniciales 5 para aceptar y 25 para
+  tenerlo listo; se cambian en el panel). Los nuevos sin aceptar vuelven a sonar cada minuto. Los minutos se calculan con la
+  hora del servidor, aunque el reloj del aparato esté mal.
+- **WhatsApp oficial:** no incluido; requiere la aprobación del dueño (cuenta de Meta Business, número dedicado, costo por mensaje).
+
+### Prueba realizada (15-nov-2026)
+Panel "En vivo" → pedido de mesa desde otra pestaña: el aviso apareció en **0.83 s** (pedido #3); pedido a domicilio: **1.06 s**
+(#4) y el título mostró "(1)". "Me encargo" → "Atiende: Tú". Cocina con área Barra mostró solo las Coronitas del pedido;
+Empezar → Listo. Al final se cerraron los pedidos y la cuenta, se borraron las áreas de prueba y se vació el horario.
 ## Entregar el restaurante a su dueño
 La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
 ```sql

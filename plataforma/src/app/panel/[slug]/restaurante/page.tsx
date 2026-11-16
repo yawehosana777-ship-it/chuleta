@@ -7,6 +7,7 @@ import { leerTema, PLANTILLAS } from "@/lib/menu/temas";
 import { contextoPagina } from "@/server/panel/contexto";
 import { subirImagenRestaurante } from "./acciones";
 import { FormularioRestaurante } from "./formulario";
+import { SeccionOperacion } from "./operacion";
 import { FormularioServicio } from "./servicio";
 import { DIAS } from "@/lib/pedidos";
 
@@ -16,6 +17,7 @@ type Entrega = { fixed_fee_cents: number | null; min_order_cents: number; area_n
 type FilaRestaurante = {
   name: string; description: string | null; address: string | null; phone: string | null; whatsapp: string | null;
   theme: unknown; logo_path: string | null; cover_path: string | null; dine_in_enabled: boolean; delivery_enabled: boolean;
+  alert_accept_minutes: number; alert_ready_minutes: number;
   delivery_settings: Entrega | Entrega[] | null;
 };
 
@@ -30,12 +32,14 @@ export default async function PaginaRestaurante({ params }: PageProps<"/panel/[s
   const { ctx, autorizado } = await contextoPagina(slug, "settings.edit");
   if (!autorizado) return <SinPermiso />;
 
-  const [{ data: r }, { data: horas }] = await Promise.all([
+  const [{ data: r }, { data: horas }, { data: areas }, { data: categorias }] = await Promise.all([
     ctx.supabase.from("restaurants")
-      .select("name, description, address, phone, whatsapp, theme, logo_path, cover_path, dine_in_enabled, delivery_enabled, delivery_settings(fixed_fee_cents, min_order_cents, area_note)")
+      .select("name, description, address, phone, whatsapp, theme, logo_path, cover_path, dine_in_enabled, delivery_enabled, alert_accept_minutes, alert_ready_minutes, delivery_settings(fixed_fee_cents, min_order_cents, area_note)")
       .eq("id", ctx.restaurante.id).single<FilaRestaurante>(),
     ctx.supabase.from("opening_hours").select("weekday, opens_at, closes_at")
       .eq("restaurant_id", ctx.restaurante.id).eq("service", "dine_in").order("opens_at"),
+    ctx.supabase.from("areas").select("id, name").eq("restaurant_id", ctx.restaurante.id).order("name"),
+    ctx.supabase.from("categories").select("id, name, area_id").eq("restaurant_id", ctx.restaurante.id).order("position"),
   ]);
   if (!r) return null;
   const entrega = Array.isArray(r.delivery_settings) ? r.delivery_settings[0] : r.delivery_settings;
@@ -65,6 +69,11 @@ export default async function PaginaRestaurante({ params }: PageProps<"/panel/[s
         <FormularioServicio slug={slug} mesa={r.dine_in_enabled} horario={horario} domicilio={{
           activo: r.delivery_enabled, zona: entrega?.area_note ?? "", envio: monto(entrega?.fixed_fee_cents), minimo: monto(entrega?.min_order_cents),
         }} />
+      </section>
+      <section className="rounded-2xl border border-linea bg-superficie p-4" aria-labelledby="t-operacion">
+        <h2 id="t-operacion" className="mb-4 font-semibold">Áreas y avisos</h2>
+        <SeccionOperacion slug={slug} areas={areas ?? []} categorias={categorias ?? []}
+          aceptar={r.alert_accept_minutes} preparar={r.alert_ready_minutes} />
       </section>
     </div>
   );

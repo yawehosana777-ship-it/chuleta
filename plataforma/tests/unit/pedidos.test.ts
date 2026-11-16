@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { crearLinea } from "@/lib/menu/carrito";
 import type { Producto } from "@/lib/menu/tipos";
 import {
-  articulosParaBase, esquemaPedidoDomicilio, esquemaPedidoMesa, estadoCliente, leerHorario, mensajeError, notasDomicilio, siguientesPasos,
+  articulosParaBase, esquemaPedidoDomicilio, esquemaPedidoMesa, estadoCliente, leerHorario, limiteAtraso, mensajeError, notasDomicilio,
+  siguientesPasos,
 } from "@/lib/pedidos";
 import type { Permiso } from "@/lib/permisos";
 
@@ -100,6 +101,17 @@ describe("pedido a domicilio", () => {
   it("en domicilio, 'listo' se le dice al cliente como 'va en camino'", () => {
     expect(estadoCliente("listo", "delivery")).toMatch(/camino/);
     expect(estadoCliente("listo", "dine_in")).toMatch(/mesa/);
+  });
+});
+
+describe("avisos de atraso", () => {
+  const limites = { aceptar: 5, preparar: 25 };
+  it("nuevo usa el límite para aceptar; aceptado/en preparación el de tenerlo listo; listo no se atrasa", () => {
+    expect(limiteAtraso("nuevo", limites)).toBe(5);
+    expect(limiteAtraso("aceptado", limites)).toBe(25);
+    expect(limiteAtraso("en_preparacion", limites)).toBe(25);
+    expect(limiteAtraso("listo", limites)).toBeNull();
+    expect(limiteAtraso("entregado", limites)).toBeNull();
   });
 });
 

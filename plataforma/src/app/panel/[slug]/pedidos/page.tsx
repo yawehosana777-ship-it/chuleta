@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Actualizar } from "@/components/actualizar";
 import { BotonAccion, Interruptor } from "@/components/panel/controles";
+import { Demora, RecordarAtrasados } from "@/components/panel/demora";
 import { SinPermiso } from "@/components/panel/sin-permiso";
 import { formatoDinero } from "@/lib/dinero";
-import { NOMBRE_ESTADO, puedeCancelar, siguientesPasos, terminado, type EstadoPedido } from "@/lib/pedidos";
+import { limiteAtraso, NOMBRE_ESTADO, puedeCancelar, siguientesPasos, terminado, type EstadoPedido } from "@/lib/pedidos";
 import { contextoPagina, type ContextoPanel } from "@/server/panel/contexto";
-import { cambiarEstado, pausarPedidos } from "./acciones";
+import { cambiarEstado, pausarPedidos, tomarPedido } from "./acciones";
 import { FormularioCancelar } from "./cancelar";
 
 export const metadata: Metadata = { title: "Pedidos" };
@@ -17,7 +18,7 @@ export const instant = false;
 type Pedido = {
   id: string; number: number; type: "dine_in" | "delivery"; status: EstadoPedido; version: number; created_at: string;
   customer_name: string | null; customer_phone: string | null; delivery_address: string | null; delivery_references: string | null;
-  notes: string | null; delivery_fee_cents: number; total_cents: number;
+  notes: string | null; delivery_fee_cents: number; total_cents: number; assigned_to: string | null;
   table_accounts: { tables: { label: string } | null } | null;
   order_items: { product_name: string; quantity: number; options: { name: string }[]; notes: string | null; line_total_cents: number }[];
 };
@@ -27,22 +28,34 @@ const COLOR: Record<EstadoPedido, string> = {
   nuevo: "border-dorado/60 bg-dorado/10", aceptado: "border-linea bg-superficie", en_preparacion: "border-linea bg-superficie",
   listo: "border-emerald-400/40 bg-emerald-500/5", entregado: "border-linea bg-superficie opacity-70", cancelado: "border-linea bg-superficie opacity-60",
 };
+const FILTROS = { todos: "Todos", mios: "Míos", libres: "Sin encargado" } as const;
 
-export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]/pedidos">) {
+export default async function PaginaPedidos({ params, searchParams }: PageProps<"/panel/[slug]/pedidos">) {
   const { slug } = await params;
+  const { ver } = await searchParams;
   const { ctx, autorizado } = await contextoPagina(slug, "orders.view");
   if (!autorizado) return <SinPermiso />;
 
-  const [{ data: pedidos }, { data: r }, { count: dias }] = await leerDatos(ctx);
+  const { ahora, datos: [{ data: pedidos }, { data: r }, { count: dias }, { data: equipo }] } = await leerDatos(ctx);
+  const filtro: keyof typeof FILTROS = ver === "mios" || ver === "libres" ? ver : "todos";
+  const atiende = ctx.puede("orders.accept") || ctx.puede("orders.update");
+  const jefe = ctx.rol === "owner" || ctx.rol === "manager";
+  const nombre = (id: string) => (id === ctx.usuarioId ? "Tú" : equipo?.find((e: { user_id: string }) => e.user_id === id)?.full_name ?? "Otra persona");
 
   const Q = (c: number) => formatoDinero(c, r?.currency ?? "GTQ");
   const hora = new Intl.DateTimeFormat("es-GT", { timeStyle: "short", timeZone: r?.timezone ?? "America/Guatemala" });
-  const activos = (pedidos ?? []).filter((p) => !terminado(p.status)).sort((a, b) => ORDEN[a.status] - ORDEN[b.status]);
+  const limites = { aceptar: r?.alert_accept_minutes ?? 5, preparar: r?.alert_ready_minutes ?? 25 };
+  const activos = (pedidos ?? []).filter((p) => !terminado(p.status))
+    .filter((p) => filtro === "todos" || (filtro === "mios" ? p.assigned_to === ctx.usuarioId : !p.assigned_to))
+    .sort((a, b) => ORDEN[a.status] - ORDEN[b.status]);
   const terminados = (pedidos ?? []).filter((p) => terminado(p.status)).reverse();
+  const nuevos = (pedidos ?? []).filter((p) => p.status === "nuevo").map((p) => p.created_at);
 
   return (
     <div className="flex flex-col gap-6">
-      <Actualizar segundos={10} />
+      {/* Respaldo por si se corta la conexión en vivo. */}
+      <Actualizar segundos={30} />
+      <RecordarAtrasados nuevos={nuevos} limite={limites.aceptar} ahoraServidor={ahora} />
 
       <section className="flex flex-col gap-2">
         {ctx.puede("settings.edit") && r && (
@@ -51,13 +64,24 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
             <Interruptor key={String(r.orders_paused)} etiqueta="Pausar" activo={r.orders_paused} accion={pausarPedidos.bind(null, slug)} colorActivo="bg-red-500" />
           </div>
         )}
-        {r && !r.dine_in_enabled && <Aviso>Los pedidos en mesa están apagados. Actívalos en <Link className="underline" href={`/panel/${slug}/restaurante`}>Restaurante</Link>.</Aviso>}
+        {r && !r.dine_in_enabled && !r.delivery_enabled && <Aviso>Los pedidos en mesa y a domicilio están apagados. Actívalos en <Link className="underline" href={`/panel/${slug}/restaurante`}>Restaurante</Link>.</Aviso>}
         {!dias && <Aviso>Aún no hay horario: los clientes no pueden pedir hasta que lo configures en <Link className="underline" href={`/panel/${slug}/restaurante`}>Restaurante</Link>.</Aviso>}
       </section>
 
       <section className="flex flex-col gap-3" aria-labelledby="t-activos">
-        <h2 id="t-activos" className="font-semibold">Pedidos activos <span className="text-tenue">({activos.length})</span></h2>
-        {activos.length === 0 && <p className="rounded-2xl border border-dashed border-linea px-4 py-6 text-center text-sm text-tenue">No hay pedidos por atender. Esta pantalla se actualiza sola.</p>}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="t-activos" className="font-semibold">Pedidos activos <span className="text-tenue">({activos.length})</span></h2>
+          <nav aria-label="Filtrar pedidos" className="flex gap-1 text-xs">
+            {Object.entries(FILTROS).map(([clave, texto]) => (
+              <Link key={clave} href={clave === "todos" ? `/panel/${slug}/pedidos` : `/panel/${slug}/pedidos?ver=${clave}`}
+                aria-current={filtro === clave ? "page" : undefined}
+                className={`rounded-full px-3 py-1.5 font-semibold ${filtro === clave ? "bg-guinda text-crema" : "border border-linea text-tenue"}`}>
+                {texto}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        {activos.length === 0 && <p className="rounded-2xl border border-dashed border-linea px-4 py-6 text-center text-sm text-tenue">No hay pedidos por atender. Cuando llegue uno, sonará el aviso.</p>}
         <ul className="flex flex-col gap-3">
           {activos.map((p) => (
             <li key={p.id} className={`rounded-2xl border p-4 ${COLOR[p.status]}`}>
@@ -66,7 +90,11 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
                   #{p.number} · {lugar(p)}
                   {p.customer_name && <span className="text-sm font-normal text-tenue"> · {p.customer_name}</span>}
                 </p>
-                <p className="text-sm text-tenue">{hora.format(new Date(p.created_at))} · <b className="text-crema">{nombreEstado(p)}</b></p>
+                <p className="flex flex-wrap items-center gap-2 text-sm text-tenue">
+                  {hora.format(new Date(p.created_at))}
+                  <Demora creado={p.created_at} ahoraServidor={ahora} limite={limiteAtraso(p.status, limites)} />
+                  <b className="text-crema">{nombreEstado(p)}</b>
+                </p>
               </div>
               <ul className="mt-2 flex flex-col gap-1 text-sm">
                 {p.order_items.map((i, n) => (
@@ -89,6 +117,17 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
                 </div>
               )}
               {p.notes && <p className="mt-2 rounded-lg bg-superficie-2 px-3 py-2 text-xs">Notas: {p.notes}</p>}
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-tenue">{p.assigned_to ? <>Atiende: <b className="text-crema">{nombre(p.assigned_to)}</b></> : "Sin encargado"}</span>
+                {atiende && !p.assigned_to && (
+                  <BotonAccion accion={tomarPedido.bind(null, slug, p.id, true)}>Me encargo</BotonAccion>
+                )}
+                {p.assigned_to && (p.assigned_to === ctx.usuarioId || jefe) && (
+                  <BotonAccion accion={tomarPedido.bind(null, slug, p.id, false)}>Soltar</BotonAccion>
+                )}
+              </div>
+
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold">
                   {Q(p.total_cents)}
@@ -131,18 +170,23 @@ export default async function PaginaPedidos({ params }: PageProps<"/panel/[slug]
   );
 }
 
-/** Pedidos activos + los terminados de las últimas 12 horas, estado del restaurante y si tiene horario. */
-function leerDatos(ctx: NonNullable<ContextoPanel>) {
-  const desde = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-  return Promise.all([
+/** Pedidos activos + terminados de las últimas 12 horas, estado del restaurante, horario y nombres del equipo. */
+async function leerDatos(ctx: NonNullable<ContextoPanel>) {
+  const ahora = Date.now();
+  const desde = new Date(ahora - 12 * 60 * 60 * 1000).toISOString();
+  const datos = await Promise.all([
     ctx.supabase.from("orders")
-      .select("id, number, type, status, version, created_at, customer_name, customer_phone, delivery_address, delivery_references, notes, delivery_fee_cents, total_cents, table_accounts(tables(label)), order_items(product_name, quantity, options, notes, line_total_cents)")
+      .select("id, number, type, status, version, created_at, customer_name, customer_phone, delivery_address, delivery_references, notes, delivery_fee_cents, total_cents, assigned_to, table_accounts(tables(label)), order_items(product_name, quantity, options, notes, line_total_cents)")
       .eq("restaurant_id", ctx.restaurante.id)
       .or(`status.in.(nuevo,aceptado,en_preparacion,listo),created_at.gte.${desde}`)
       .order("created_at", { ascending: true }).limit(150).returns<Pedido[]>(),
-    ctx.supabase.from("restaurants").select("orders_paused, dine_in_enabled, currency, timezone").eq("id", ctx.restaurante.id).single(),
+    ctx.supabase.from("restaurants")
+      .select("orders_paused, dine_in_enabled, delivery_enabled, currency, timezone, alert_accept_minutes, alert_ready_minutes")
+      .eq("id", ctx.restaurante.id).single(),
     ctx.supabase.from("opening_hours").select("id", { count: "exact", head: true }).eq("restaurant_id", ctx.restaurante.id).eq("service", "dine_in"),
+    ctx.supabase.rpc("team_names", { p_restaurant: ctx.restaurante.id }),
   ]);
+  return { ahora, datos };
 }
 
 const nombreEstado = (p: Pedido) => (p.type === "delivery" && p.status === "listo" ? "En camino" : NOMBRE_ESTADO[p.status]);
