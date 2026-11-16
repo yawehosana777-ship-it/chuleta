@@ -10,6 +10,9 @@ import { FormularioRestaurante } from "./formulario";
 
 export const metadata: Metadata = { title: "Restaurante" };
 
+// Página privada: espera a confirmar sesión y permisos.
+export const instant = false;
+
 export default async function PaginaRestaurante({ params }: PageProps<"/panel/[slug]/restaurante">) {
   const { slug } = await params;
   const { ctx, autorizado } = await contextoPagina(slug, "settings.edit");

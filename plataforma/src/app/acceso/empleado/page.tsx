@@ -5,6 +5,8 @@ import { clientePublico } from "@/lib/supabase/publico";
 import { FormularioAccesoEmpleado } from "./formulario";
 
 export const metadata: Metadata = { title: "Acceso de empleados", robots: { index: false } };
+// Lee el restaurante del enlace al momento: es una pantalla corta, sin nada que preparar de antemano.
+export const instant = false;
 
 export default async function PaginaAccesoEmpleado({ searchParams }: PageProps<"/acceso/empleado">) {
   const { r } = await searchParams;

@@ -11,6 +11,9 @@ export const metadata: Metadata = { title: "Empleados" };
 
 type Membresia = { id: string; user_id: string; role: Rol; active: boolean; membership_permissions: { permission: string }[] };
 
+// Página privada: espera a confirmar sesión y permisos.
+export const instant = false;
+
 export default async function PaginaEmpleados({ params }: PageProps<"/panel/[slug]/empleados">) {
   const { slug } = await params;
   const { ctx, autorizado } = await contextoPagina(slug, "staff.manage");

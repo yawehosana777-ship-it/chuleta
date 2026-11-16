@@ -12,6 +12,9 @@ import { FormularioCategoria } from "../../formularios";
 
 export const metadata: Metadata = { title: "Editar categoría" };
 
+// Página privada: espera a confirmar sesión y permisos.
+export const instant = false;
+
 export default async function PaginaCategoria({ params }: PageProps<"/panel/[slug]/menu/categoria/[id]">) {
   const { slug, id } = await params;
   const { ctx, autorizado } = await contextoPagina(slug, "menu.edit");

@@ -1,5 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { permisosEfectivos, type Permiso, type Rol } from "@/lib/permisos";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -11,6 +12,8 @@ export type ContextoPanel = Awaited<ReturnType<typeof cargarContexto>>;
  * miembro activo, no existe para él. El id del restaurante nunca viene del navegador.
  */
 async function cargarContexto(slug: string) {
+  // El panel es privado: siempre en el momento de la petición, nunca preparado de antemano.
+  await connection();
   const supabase = await clienteServidor();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;

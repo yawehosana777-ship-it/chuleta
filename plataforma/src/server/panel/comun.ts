@@ -1,5 +1,5 @@
 import "server-only";
-import { updateTag } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { z } from "zod";
 import type { EstadoFormulario } from "@/lib/validaciones";
 import { etiquetaMenu } from "@/server/menu-publico";
@@ -10,7 +10,10 @@ export const NO_AUTORIZADO = "No autorizado: tu usuario no tiene permiso para ha
 /** Ejecuta una acción del panel y convierte cualquier fallo en un mensaje claro. */
 export async function intentar(fn: () => Promise<EstadoFormulario | void>): Promise<EstadoFormulario> {
   try {
-    return (await fn()) ?? { exito: "Guardado." };
+    const resultado = (await fn()) ?? { exito: "Guardado." };
+    // La pantalla del panel vuelve a leer los datos (p. ej. el empleado recién creado aparece en la lista).
+    if (resultado.exito) refresh();
+    return resultado;
   } catch (e) {
     if (e instanceof NoAutorizado) return { error: NO_AUTORIZADO };
     if (e instanceof z.ZodError) return { errores: z.flattenError(e).fieldErrors as Record<string, string[]>, error: "Revisa los datos marcados." };

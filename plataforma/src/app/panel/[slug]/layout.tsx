@@ -5,6 +5,9 @@ import { contextoPagina } from "@/server/panel/contexto";
 import { exigirContrasenaPropia } from "@/server/panel/perfil";
 import { Navegacion } from "./navegacion";
 
+// Panel privado: espera a confirmar sesión y permisos antes de mostrar nada.
+export const instant = false;
+
 export default async function LayoutRestaurante({ children, params }: LayoutProps<"/panel/[slug]">) {
   const { slug } = await params;
   const { ctx } = await contextoPagina(slug);

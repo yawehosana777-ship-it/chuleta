@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fases 1 y 2
+# Plataforma de menús digitales — Fases 1, 2 y 3
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -18,7 +18,8 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Carrito y resumen para mostrar al mesero (no se envía ni se guarda) | ✅ Fase 2 |
 | Plantillas de tema (`parrilla`, `claro`, `campo`) y colores propios validados | ✅ Fase 2 |
 | Enviar pedidos en línea | ⏳ Fase 4 |
-| Administración de menú, fotos, empleados | ⏳ Fase 3 |
+| Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
+| Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 
 ## Cómo se puso en marcha (ya hecho en el proyecto `uqwojpsvrfoqsfaldkhj`)
 
@@ -26,7 +27,7 @@ La Fase 1 **no necesita la clave secreta**: todo lo administrativo se ejecuta en
 Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro de la base de datos.
 
 1. **Clave pública:** `.env.local` lleva `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-   `SUPABASE_SECRET_KEY` queda vacía hasta la Fase 3. **Nunca compartas la clave secreta.**
+   `SUPABASE_SECRET_KEY` puede seguir vacía: solo la usa "Olvidó su contraseña" del panel. **Nunca compartas la clave secreta.**
 2. **Tablas:** pegar y ejecutar `supabase/sql-editor/01-crear-tablas.sql` (las 3 migraciones juntas).
    Si Supabase avisa de RLS, elegir **"Run and enable RLS"**.
 3. **Authentication › Sign In / Providers › Email:** "Confirm email" **desactivado** (el correo gratuito
@@ -38,10 +39,11 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 5. **Carta:** pegar y ejecutar `supabase/sql-editor/03-cargar-carta.sql` (no duplica si se repite).
 6. **Fase 2:** ejecutar `supabase/sql-editor/04-fase-2.sql` (íconos y fotos por categoría) y luego
    `05-presentacion-don-chuleta.sql` (dirección, logo, portada, tema). El segundo se puede repetir.
+7. **Fase 3:** ejecutar `supabase/sql-editor/06-fase-3.sql` (espacio de fotos `menu` y funciones de empleados).
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500`
 
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
@@ -52,9 +54,9 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 - Lighthouse móvil (producción en localhost, nov-2026): Accesibilidad 100 · Buenas prácticas 100 · SEO 100 ·
   Rendimiento 89–90 (simulado) / 91–92 (limitación real). Para medir:
   `npm run build`, `npx next start -p 3001` y `npx lighthouse http://localhost:3001/r/don-chuleta --form-factor=mobile`.
-  En la Fase 3 el panel invalidará la caché al guardar (`etiquetaMenu` en `src/server/menu-publico.ts`).
+  Al guardar desde el panel, la caché se invalida al instante (`etiquetaMenu` en `src/server/menu-publico.ts`).
 - Imágenes: por ahora las de Don Chuleta viven en `public/menus/don-chuleta/`. Las rutas que no empiezan
-  con `/` se leen del bucket público `menu` de Supabase Storage (se crea en la Fase 3 para que el dueño suba fotos).
+  con `/` se leen del bucket público `menu` de Supabase Storage (lo usa el panel para las fotos que sube el dueño).
 - Tema: `restaurants.theme` = `{ "plantilla": "parrilla" | "claro" | "campo", "colores": {...}, "lema": "...", "etiquetas": [...] }`.
   Colores inválidos se ignoran (no se puede inyectar CSS).
 - El carrito vive solo en la memoria del teléfono: no se guarda ni se envía. El resumen dice claramente que
@@ -72,6 +74,28 @@ npm run dev
 > sea la correcta (Windows › Fecha y hora › "Establecer la hora automáticamente"). Con el reloj
 > desfasado, la sesión parece vencida y el panel regresa a la pantalla de acceso.
 
+## Panel de administración (Fase 3)
+- Entrada: `/panel` → `/panel/<slug>`. Cada pestaña aparece solo si el usuario tiene el permiso
+  (Menú = `menu.edit`, Restaurante = `settings.edit`, Empleados = `staff.manage`). Dueño y gerente tienen todos.
+- El restaurante **siempre** sale de la sesión (`src/server/panel/contexto.ts`); el slug de la URL solo elige entre
+  los restaurantes del usuario. Sin permiso → "No autorizado"; sin membresía activa → 404.
+- Al guardar, el menú público se actualiza al instante (`updateTag`) y la pantalla del panel se refresca (`refresh`).
+- **Fotos:** se reducen en el teléfono (WebP, máx. 1600 px) y el servidor revisa los bytes del archivo (JPG/PNG/WebP,
+  máx. 2.5 MB). Se guardan en el bucket `menu` dentro de la carpeta del restaurante; la base de datos solo deja
+  subir a quien tiene `menu.edit` en ese restaurante.
+- **Empleados (sin clave secreta):** el dueño elige usuario y contraseña temporal. La cuenta se crea con el registro
+  público de Supabase usando un correo interno `<usuario>.<slug>@empleados.invalid` (no es un correo real) y la
+  función `create_staff_member` la vincula solo si es nueva, coincide con el usuario y quien la pide tiene `staff.manage`.
+  Al primer ingreso el empleado **debe** cambiar la contraseña. Desactivarlo le quita el acceso al momento.
+- **"Olvidó su contraseña"** necesita `SUPABASE_SECRET_KEY` en el servidor. Sin ella, el panel lo explica:
+  desactivar al empleado y crearle un usuario nuevo.
+
+### Prueba realizada (15-nov-2026)
+1. Dueño: Agotado en "Chuleta" → el menú público mostró "AGOTADO" al instante; se regresó.
+2. Dueño: creó "Mesero de Prueba" (`prueba.mesero`, solo "Editar el menú").
+3. Empleado: al entrar fue obligado a cambiar la contraseña (abrir el menú directo lo regresaba); después vio solo
+   la pestaña Menú. Restaurante y Empleados → "No autorizado".
+4. Dueño: lo desactivó → el empleado recibe 404 en el panel.
 ## Entregar el restaurante a su dueño
 La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
 ```sql

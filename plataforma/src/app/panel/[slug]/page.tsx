@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { contextoPagina } from "@/server/panel/contexto";
 
+// Página privada: espera a confirmar sesión y permisos.
+export const instant = false;
+
 export default async function InicioRestaurante({ params }: PageProps<"/panel/[slug]">) {
   const { slug } = await params;
   const { ctx } = await contextoPagina(slug);

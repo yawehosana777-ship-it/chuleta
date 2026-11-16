@@ -20,6 +20,9 @@ type Producto = {
     options: { id: string; name: string; price_delta_cents: number; position: number }[] }[];
 };
 
+// Página privada: espera a confirmar sesión y permisos.
+export const instant = false;
+
 export default async function PaginaProducto({ params, searchParams }: PageProps<"/panel/[slug]/menu/producto/[id]">) {
   const { slug, id } = await params;
   const { categoria, nuevo } = await searchParams;

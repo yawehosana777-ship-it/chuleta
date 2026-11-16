@@ -20,6 +20,9 @@ type Fila = {
     product_images: { storage_path: string; position: number }[] }[];
 };
 
+// Página privada: espera a confirmar sesión y permisos.
+export const instant = false;
+
 export default async function PaginaMenuPanel({ params }: PageProps<"/panel/[slug]/menu">) {
   const { slug } = await params;
   const { ctx, autorizado } = await contextoPagina(slug, "menu.edit");
