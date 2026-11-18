@@ -6,8 +6,10 @@
 [build]
   base = "plataforma"
   command = "npm run build"
-  # Relativo a la raíz del repositorio (así lo resuelve Netlify aunque haya "base").
-  publish = "plataforma/.next"
+  # En los servidores de Netlify es relativo a "base" (plataforma/.next).
+  # Se publica desde Netlify (conectado a GitHub): construir en Windows con
+  # `netlify deploy --build` falla por un error de rutas del adaptador.
+  publish = ".next"
 
 # Adaptador oficial de Next.js (también al publicar desde la computadora con `netlify deploy --build`).
 [[plugins]]
