@@ -1,6 +1,6 @@
 # Plataforma de menús digitales multi-restaurante — Plan técnico
 
-> Estado: **Fases 1 a 6 aprobadas (16-nov-2026). Fase 5 sin WhatsApp (decisión del dueño). Fase 7 (seguridad y pruebas) terminada: 0 hallazgos graves, 4 corregidos (ver docs/informe-seguridad-fase-7.md), aplicada en Supabase; pendiente de aprobación.** Fase 4: A = pedidos de mesa; B = domicilio gratis solo en Malacatancito, sin mapa (decisión del dueño, 15-nov-2026).** Fase 2 (menú del cliente en `/r/don-chuleta` leyendo Supabase; un cambio de precio en la base apareció solo en ~1 minuto).
+> Estado: **Fases 1 a 7 aprobadas (18-nov-2026). Fase 5 sin WhatsApp (decisión del dueño). Fase 7: 0 hallazgos graves (ver docs/informe-seguridad-fase-7.md). Siguiente: Fase 8 (publicación), pendiente de autorización.**
 > Lighthouse móvil (versión de producción en localhost): Accesibilidad 100, Buenas prácticas 100, SEO 100; Rendimiento 89–90 en modo simulado y 91–92 con limitación real de red/CPU. Ver `plataforma/README.md`.
 > La demo de Don Chuleta se conserva sin cambios en `demo/` como referencia visual.
 
