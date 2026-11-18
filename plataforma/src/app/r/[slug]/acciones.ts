@@ -1,6 +1,6 @@
 "use server";
 
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { articulosParaBase, esquemaPedidoDomicilio, mensajeError, notasDomicilio } from "@/lib/pedidos";
 import { clientePublico } from "@/lib/supabase/publico";
 

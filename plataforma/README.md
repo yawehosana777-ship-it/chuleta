@@ -1,4 +1,4 @@
-# Plataforma de menús digitales — Fases 1 a 6
+# Plataforma de menús digitales — Fases 1 a 7
 
 Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](../docs/plan-plataforma.md).
 
@@ -49,10 +49,11 @@ Supabase › **SQL Editor** (rol `postgres`) y la invitación se verifica dentro
 9. **Fase 4B:** ejecutar `supabase/sql-editor/08-fase-4b.sql` (pedidos a domicilio).
 10. **Fase 5:** ejecutar `supabase/sql-editor/09-fase-5.sql` (tiempo real de pedidos, áreas, encargado, avisos de atraso).
 11. **Fase 6:** ejecutar `supabase/sql-editor/10-fase-6.sql` (promociones e informes).
+12. **Fase 7:** ejecutar `supabase/sql-editor/11-fase-7.sql` (endurecimiento y límite de pedidos por minuto).
 
 > Las migraciones se aplicaron a mano, así que la CLI de Supabase no las tiene registradas.
 > Antes de usar `supabase db push` en el futuro:
-> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700 20261116000800 20261116000900`
+> `npx supabase migration repair --status applied 20261116000100 20261116000200 20261116000300 20261116000400 20261116000500 20261116000600 20261116000700 20261116000800 20261116000900 20261116001000`
 
 ## Menú del cliente (Fase 2)
 - Dirección: `http://localhost:3000/r/don-chuleta`. Solo se ven restaurantes **activos** y productos/categorías activos.
@@ -181,6 +182,12 @@ Empezar → Listo. Al final se cerraron los pedidos y la cuenta, se borraron las
 Promoción «Prueba 20%» en Chuleta + Chuleta destacada → el menú mostró «Recomendados» y Q 30.00 tachado → Q 24.00 «-20%»; el carrito
 cobró Q 24.00 y la base de datos (consulta de solo lectura) calculó el mismo descuento (Q 6.00). Informes de 30 días en cero (datos de
 prueba ya borrados). Al final se borró la promoción y se quitó el destacado. No se crearon pedidos de prueba.
+## Seguridad y pruebas (Fase 7)
+Informe completo: [`../docs/informe-seguridad-fase-7.md`](../docs/informe-seguridad-fase-7.md). Resumen: 0 hallazgos graves;
+corregidos: carrito que se perdía sin internet, política de contenido (CSP) + HTTPS obligatorio, límite de 30 pedidos por
+minuto por restaurante y dos funciones internas cerradas. `tests/db/auditoria.test.ts` revisa el catálogo completo de la base
+en cada cambio. Lighthouse móvil: 91 / 100 / 100 / 100. Zod se usa desde `src/lib/zod.ts` (sin `eval`, por la CSP) y no se
+carga en el menú del cliente.
 ## Entregar el restaurante a su dueño
 La cuenta creada con la invitación de prueba es del desarrollador. Para el dueño real, en el SQL Editor:
 ```sql
@@ -193,6 +200,7 @@ Se le envía `https://<dominio>/acceso/invitacion/<token>`: solo funciona con es
 ```
 npm test          # todas (no necesitan internet ni claves)
 npm run test:db   # solo aislamiento y permisos de la base de datos
+npm run test:telefono   # recorrido en tamaño teléfono con Edge (con `npm run dev` corriendo; no crea pedidos)
 ```
 Las pruebas de base de datos usan PostgreSQL en memoria (PGlite) con las mismas migraciones.
 

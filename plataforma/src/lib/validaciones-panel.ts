@@ -1,6 +1,6 @@
 // Validación de los formularios del panel. Todo lo que llega del navegador
 // se valida aquí ANTES de tocar la base de datos (y la base vuelve a validar).
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { PERMISOS_PERSONAL, USUARIO_VALIDO } from "./permisos";
 import { ICONOS } from "./menu/tipos";
 import { esquemaContrasena } from "./validaciones";

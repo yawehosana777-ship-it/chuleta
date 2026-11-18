@@ -11,7 +11,7 @@ import {
   sePuedePedir, totalArticulos, totalCarrito, type Eleccion, type LineaCarrito,
 } from "@/lib/menu/carrito";
 import type { Categoria, Domicilio, MesaCliente, Producto, Restaurante } from "@/lib/menu/tipos";
-import { MENSAJE_MESA } from "@/lib/pedidos";
+import { MENSAJE_MESA } from "@/lib/pedidos-textos";
 import {
   IconoBasura, IconoBolsa, IconoBuscar, IconoCategoria, IconoCerrar, IconoCheck, IconoInfo, IconoMas, IconoReloj,
 } from "./iconos";
@@ -23,6 +23,18 @@ const idSeccion = (id: string) => `c-${id}`;
 const reducirMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 type Abierto = { producto: Producto; categoria: Categoria } | null;
+
+/**
+ * Si se corta el internet al enviar, el pedido NO se pierde: el carrito sigue ahí
+ * y, como la clave del envío es la misma, volver a tocar "Enviar" no lo duplica.
+ */
+async function conConexion<T>(enviar: () => Promise<T>): Promise<T | { error: string }> {
+  try {
+    return await enviar();
+  } catch {
+    return { error: "No se pudo conectar. Revisa tu internet y vuelve a tocar «Enviar pedido»: no se enviará dos veces." };
+  }
+}
 
 /** Clave única por envío: si el pedido se envía dos veces, el restaurante lo recibe una sola vez. */
 function nuevaClave() {
@@ -400,10 +412,10 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
     if (!mesa || enviando) return;
     setError(null);
     iniciar(async () => {
-      const r = await enviarPedido({
+      const r = await conConexion(() => enviarPedido({
         mesa: mesa.codigo, clave, nombre: String(datos.get("nombre") ?? ""), notas: String(datos.get("notas") ?? ""),
         lineas: lineas.map((l) => ({ productoId: l.productoId, cantidad: l.cantidad, opciones: l.opciones, nota: l.nota })),
-      });
+      }));
       if ("error" in r) { setError(r.error); return; }
       onEnviado();
       router.push(`/pedido/${r.token}?m=${mesa.codigo}`);
@@ -576,11 +588,11 @@ function FormularioDomicilio({ lineas, Q, domicilio, slug, clave, onVolver, onEn
     const texto = (k: string) => String(datos.get(k) ?? "");
     const cliente: DatosCliente = { nombre: texto("nombre"), telefono: texto("telefono"), direccion: texto("direccion"), referencias: texto("referencias") };
     iniciar(async () => {
-      const r = await enviarDomicilio({
+      const r = await conConexion(() => enviarDomicilio({
         slug, clave, ...cliente, pagaCon: texto("pagaCon"), notas: texto("notas"), enZona: datos.get("enZona") === "on",
         lineas: lineas.map((l) => ({ productoId: l.productoId, cantidad: l.cantidad, opciones: l.opciones, nota: l.nota })),
-      });
-      if ("error" in r) { setError(r.error); setErrores(r.errores ?? {}); return; }
+      }));
+      if ("error" in r) { setError(r.error); setErrores("errores" in r ? r.errores ?? {} : {}); return; }
       try { localStorage.setItem(GUARDADO, JSON.stringify(cliente)); } catch { /* sin almacenamiento: no pasa nada */ }
       onEnviado();
       router.push(`/pedido/${r.token}`);

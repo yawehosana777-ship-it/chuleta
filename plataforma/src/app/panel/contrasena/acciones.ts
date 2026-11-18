@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import type { EstadoFormulario } from "@/lib/validaciones";
 import { esquemaCambioContrasena } from "@/lib/validaciones-panel";

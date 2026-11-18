@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 // Variables visibles en el navegador. Se leen una por una porque Next.js
 // solo incrusta en el navegador las referencias literales a process.env.NEXT_PUBLIC_*.

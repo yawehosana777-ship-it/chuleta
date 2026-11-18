@@ -2,7 +2,7 @@
 // restaurants.theme la plantilla elegida y, si quiere, sus propios colores.
 // Todo lo que llega de la base de datos se valida: un color inválido se
 // ignora y se usa el de la plantilla (así nunca se inyecta CSS).
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 export type Colores = {
   fondo: string;

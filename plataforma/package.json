@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "vitest run tests/db",
+    "test:telefono": "playwright test",
     "claves:configurar": "node scripts/configurar-claves.mjs",
     "db:vincular": "supabase link --project-ref uqwojpsvrfoqsfaldkhj",
     "db:aplicar": "supabase db push",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^26.6.6",
     "@types/qrcode": "^1.5.5",

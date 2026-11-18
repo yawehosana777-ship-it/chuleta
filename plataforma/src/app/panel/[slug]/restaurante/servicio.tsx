@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { Casilla, Guardar, Resultado } from "@/components/panel/controles";
 import { Campo } from "@/components/ui/formulario";
-import { DIAS } from "@/lib/pedidos";
+import { DIAS } from "@/lib/pedidos-textos";
 import { guardarServicio } from "./acciones";
 
 type Dia = { abre: boolean; desde: string; hasta: string };

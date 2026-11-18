@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { correoEmpleado } from "@/lib/permisos";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import type { EstadoFormulario } from "@/lib/validaciones";

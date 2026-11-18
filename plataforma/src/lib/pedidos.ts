@@ -1,8 +1,11 @@
 // Pedidos: estados, pasos permitidos y validación de lo que manda el teléfono.
 // La base de datos vuelve a validar TODO y calcula los precios; esto solo
 // evita viajes inútiles y da mensajes claros.
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Permiso } from "./permisos";
+import { DIAS, MENSAJE_MESA } from "./pedidos-textos";
+
+export { DIAS, MENSAJE_MESA, type EstadoMesa } from "./pedidos-textos";
 
 export const ESTADOS = ["nuevo", "aceptado", "en_preparacion", "listo", "entregado", "cancelado"] as const;
 export type EstadoPedido = (typeof ESTADOS)[number];
@@ -59,13 +62,7 @@ export function limiteAtraso(estado: EstadoPedido, limites: { aceptar: number; p
 
 export const puedeCancelar =(estado: EstadoPedido, puede: (p: Permiso) => boolean) => !terminado(estado) && puede("orders.cancel");
 
-// Estado de la mesa que devuelve table_by_qr.
-export type EstadoMesa = "abierto" | "cerrado" | "pausado" | "sin_servicio";
-export const MENSAJE_MESA: Record<Exclude<EstadoMesa, "abierto">, string> = {
-  cerrado: "En este momento el restaurante está fuera de horario y no recibe pedidos desde el teléfono. Puedes ver el menú y pedirle a tu mesero.",
-  pausado: "El restaurante pausó los pedidos por un momento (mucho trabajo en cocina). Puedes pedirle a tu mesero.",
-  sin_servicio: "Este restaurante no recibe pedidos desde el teléfono. Puedes ver el menú y pedirle a tu mesero.",
-};
+
 
 const ERRORES: Record<string, string> = {
   table_not_found: "Este código de mesa ya no es válido. Pide ayuda a tu mesero.",
@@ -90,6 +87,7 @@ const ERRORES: Record<string, string> = {
   invalid_customer: "Revisa tu nombre y tu dirección.",
   below_minimum: "Tu pedido no llega al mínimo para domicilio.",
   already_assigned: "Otra persona ya se encargó de este pedido.",
+  too_many_requests: "El restaurante está recibiendo muchos pedidos en este momento. Espera un minuto e inténtalo de nuevo.",
 };
 
 /** Traduce el error de la base de datos a un mensaje para la persona. */
@@ -148,7 +146,6 @@ export const articulosParaBase = (lineas: z.output<typeof esquemaPedidoMesa>["li
   lineas.map((l) => ({ product_id: l.productoId, quantity: l.cantidad, options: l.opciones, notes: l.nota || null }));
 
 // ---------- Horario ----------
-export const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"] as const;
 const hora = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** Lee el formulario de horario: abre-0..6, desde-0..6, hasta-0..6. */

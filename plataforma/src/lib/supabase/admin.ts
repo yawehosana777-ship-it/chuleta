@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { envPublico } from "@/lib/env";
 
 /**

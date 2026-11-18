@@ -1,6 +1,6 @@
 import "server-only";
 import { refresh, updateTag } from "next/cache";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { EstadoFormulario } from "@/lib/validaciones";
 import { etiquetaMenu } from "@/server/menu-publico";
 import { NoAutorizado } from "./contexto";

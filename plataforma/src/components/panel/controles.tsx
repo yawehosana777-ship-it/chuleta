@@ -73,6 +73,8 @@ export function Resultado({ estado }: { estado: EstadoFormulario }) {
   return null;
 }
 
+const SIN_CONEXION = "No se pudo conectar. Revisa el internet e inténtalo de nuevo.";
+
 /** Botón que ejecuta una acción del servidor (con confirmación opcional). */
 export function BotonAccion({ accion, children, confirmar, peligro, className = "" }: {
   accion: () => Promise<EstadoFormulario | void>; children: ReactNode; confirmar?: string; peligro?: boolean; className?: string;
@@ -86,8 +88,12 @@ export function BotonAccion({ accion, children, confirmar, peligro, className = 
           if (confirmar && !window.confirm(confirmar)) return;
           setError(null);
           iniciar(async () => {
-            const r = await accion();
-            if (r && r.error) setError(r.error);
+            try {
+              const r = await accion();
+              if (r && r.error) setError(r.error);
+            } catch {
+              setError(SIN_CONEXION);
+            }
           });
         }}
         className={`min-h-10 rounded-xl border px-3 text-sm font-semibold transition disabled:opacity-50 ${
@@ -112,7 +118,7 @@ export function Interruptor({ etiqueta, activo, accion, colorActivo = "bg-dorado
         const nuevo = !valor;
         setValor(nuevo);
         iniciar(async () => {
-          const r = await accion(nuevo);
+          const r = await accion(nuevo).catch(() => ({ error: SIN_CONEXION }));
           if (r.error) { setValor(!nuevo); window.alert(r.error); }
         });
       }}

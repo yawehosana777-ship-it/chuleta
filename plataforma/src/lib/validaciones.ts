@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 export const esquemaAcceso = z.object({
   email: z.email("Escribe un correo válido.").trim().toLowerCase(),
