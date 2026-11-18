@@ -1,0 +1,14 @@
+# Publicación en Netlify (Fase 8).
+# La aplicación vive en la carpeta "plataforma"; Netlify detecta Next.js solo
+# (adaptador OpenNext) y publica cada cambio que llegue a la rama main.
+# Las claves NO van aquí: se pegan en Netlify › Site configuration › Environment variables.
+
+[build]
+  base = "plataforma"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Versión de soporte largo de Node.
+  NODE_VERSION = "24"
+  NEXT_TELEMETRY_DISABLED = "1"
