@@ -20,9 +20,9 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Pedidos de mesa por código QR, cuenta compartida, seguimiento del cliente | ✅ Fase 4A · `/r/<slug>/mesa/<código>` |
 | Panel de pedidos y mesas, horario, pausa, cierre de cuenta en efectivo | ✅ Fase 4A |
 | Pedidos a domicilio (gratis, solo Malacatancito, efectivo al recibir) | ✅ Fase 4B · desde `/r/<slug>` |
-| Aviso en vivo con sonido, pantalla de cocina por áreas, encargado, avisos de atraso | ✅ Fase 5 |
+| Aviso en vivo con sonido, pantalla de cocina por áreas, encargado, avisos de atraso | ✅ Fase 5 · Cocina y áreas sin enlace en el panel desde 20-nov-2026 |
 | Pedidos por WhatsApp (enlace normal wa.me, sin API) | ✅ 20-nov-2026 · se activa al escribir el número en Restaurante |
-| Promociones con fechas, destacados («Recomendados») e informes de ventas | ✅ Fase 6 |
+| Promociones con fechas, destacados («Recomendados») e informes de ventas | ✅ Fase 6 · Promociones sin enlace en el panel desde 20-nov-2026 |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
 | Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
 

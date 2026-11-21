@@ -10,7 +10,7 @@ export const NOMBRE_ROL: Record<Rol, string> = { owner: "Dueño", manager: "Gere
 
 /** Descripción para el dueño. */
 export const DESCRIPCION_PERMISO: Record<Permiso, { nombre: string; detalle: string; fase?: number }> = {
-  "menu.edit": { nombre: "Editar el menú", detalle: "Productos, precios, fotos, agotados y promociones." },
+  "menu.edit": { nombre: "Editar el menú", detalle: "Productos, precios, fotos y agotados." },
   "settings.edit": { nombre: "Datos del restaurante", detalle: "Nombre, dirección, logo, colores, horario y pausa de pedidos." },
   "staff.manage": { nombre: "Administrar empleados", detalle: "Solo dueño y gerentes." },
   "orders.view": { nombre: "Ver pedidos", detalle: "Lista de pedidos que llegan." },

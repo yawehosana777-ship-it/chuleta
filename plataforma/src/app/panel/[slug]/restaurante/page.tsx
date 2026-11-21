@@ -77,7 +77,7 @@ export default async function PaginaRestaurante({ params }: PageProps<"/panel/[s
         }} />
       </section>
       {!ctx.porWhatsApp && <section className="rounded-2xl border border-linea bg-superficie p-4" aria-labelledby="t-operacion">
-        <h2 id="t-operacion" className="mb-4 font-semibold">Áreas y avisos</h2>
+        <h2 id="t-operacion" className="mb-4 font-semibold">Avisos de atraso</h2>
         <SeccionOperacion slug={slug} areas={areas ?? []} categorias={categorias ?? []}
           aceptar={r.alert_accept_minutes} preparar={r.alert_ready_minutes} />
       </section>}

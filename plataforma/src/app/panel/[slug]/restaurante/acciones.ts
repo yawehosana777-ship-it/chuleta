@@ -106,6 +106,9 @@ export async function guardarOperacion(slug: string, _p: EstadoFormulario, datos
     const f1 = revisar(e1);
     if (f1) return f1;
 
+    // Sin la lista de áreas en el formulario (pantalla Cocina apagada), las áreas no se tocan.
+    if (![...datos.keys()].some((k) => k.startsWith("cat-"))) return { exito: "Avisos guardados." };
+
     // Cada categoría: solo se aceptan ids de categorías y áreas de ESTE restaurante (la base también lo exige).
     const [{ data: categorias }, { data: areas }] = await Promise.all([
       ctx.supabase.from("categories").select("id, area_id").eq("restaurant_id", ctx.restaurante.id),

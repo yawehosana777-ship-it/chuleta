@@ -36,7 +36,6 @@ En **Menú**:
 - **Agregar o quitar productos y categorías**, subir **fotos** y escribir descripciones.
 - Un producto sin precio aparece como «Precio por confirmar» y no se puede pedir.
 
-En **Promociones** puedes poner descuentos con fecha de inicio y fin.
 En **Restaurante** cambias logo, foto de portada, colores, dirección y teléfono.
 
 ## 4. Empleados (opcional)

@@ -9,13 +9,15 @@ import { borrarArea, crearArea, guardarOperacion } from "./acciones";
 type Area = { id: string; name: string };
 type Categoria = { id: string; name: string; area_id: string | null };
 
-export function SeccionOperacion({ slug, areas, categorias, aceptar, preparar }: {
+export function SeccionOperacion({ slug, areas, categorias, aceptar, preparar, conAreas = false }: {
   slug: string; areas: Area[]; categorias: Categoria[]; aceptar: number; preparar: number;
+  /** Áreas de preparación: solo sirven para la pantalla Cocina, que este menú no usa. */
+  conAreas?: boolean;
 }) {
   const [estado, accion] = useActionState(guardarOperacion.bind(null, slug), {});
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
+      {conAreas && <div className="flex flex-col gap-2">
         <p className="text-sm font-semibold">Áreas de preparación</p>
         <p className="text-xs text-tenue">Por ejemplo «Cocina» y «Barra». En la pantalla Cocina, cada área ve solo lo suyo.</p>
         <ul className="flex flex-wrap gap-2">
@@ -30,10 +32,10 @@ export function SeccionOperacion({ slug, areas, categorias, aceptar, preparar }:
           {areas.length === 0 && <li className="text-sm text-tenue">Aún no hay áreas.</li>}
         </ul>
         <NuevaArea slug={slug} />
-      </div>
+      </div>}
 
       <form action={accion} className="flex flex-col gap-4" noValidate>
-        {areas.length > 0 && (
+        {conAreas && areas.length > 0 && (
           // Al guardar, el formulario se reinicia; con esta clave las listas se vuelven a crear con lo ya guardado.
           <fieldset key={categorias.map((c) => c.area_id ?? "-").join()} className="flex flex-col gap-2">
             <legend className="mb-1 text-sm font-semibold">¿Dónde se prepara cada categoría?</legend>
@@ -54,7 +56,7 @@ export function SeccionOperacion({ slug, areas, categorias, aceptar, preparar }:
         </fieldset>
         <p className="-mt-2 text-xs text-tenue">Pasado ese tiempo, el pedido se marca «Atrasado» en rojo; los nuevos sin aceptar vuelven a sonar cada minuto.</p>
         <Resultado estado={estado} />
-        <Guardar>Guardar áreas y avisos</Guardar>
+        <Guardar>{conAreas ? "Guardar áreas y avisos" : "Guardar avisos"}</Guardar>
       </form>
     </div>
   );
