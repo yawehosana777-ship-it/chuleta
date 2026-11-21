@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 export function Navegacion({ slug, secciones }: { slug: string; secciones: { ruta: string; nombre: string }[] }) {
   const ruta = usePathname();
   return (
-    <nav aria-label="Secciones del panel" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <ul className="flex gap-2">
+    // Los botones bajan a otra línea si no caben: todas las secciones se ven siempre, sin deslizar hacia el lado.
+    <nav aria-label="Secciones del panel">
+      <ul className="flex flex-wrap gap-2">
         {secciones.map((s) => {
           const href = `/panel/${slug}/${s.ruta}`;
           const activa = ruta === href || ruta.startsWith(`${href}/`);
