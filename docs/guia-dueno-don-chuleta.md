@@ -38,11 +38,7 @@ En **Menú**:
 
 En **Restaurante** cambias logo, foto de portada, colores, dirección y teléfono.
 
-## 4. Empleados (opcional)
-En **Empleados** puedes crear usuarios para que alguien más te ayude a cambiar el menú.
-Entran en https://donchuleta.netlify.app/acceso/empleado?r=don-chuleta
-
-## 5. Si algo falla
+## 4. Si algo falla
 - ¿No ves el botón de WhatsApp? Revisa el número en **Restaurante** y que esté bien escrito.
 - ¿Olvidaste tu contraseña? Pide ayuda al administrador de la plataforma.
 - Nunca compartas tu contraseña por chat.

@@ -24,7 +24,7 @@ Aplicación Next.js + Supabase. Plan completo en [`../docs/plan-plataforma.md`](
 | Pedidos por WhatsApp (enlace normal wa.me, sin API) | ✅ 20-nov-2026 · se activa al escribir el número en Restaurante |
 | Promociones con fechas, destacados («Recomendados») e informes de ventas | ✅ Fase 6 · Promociones sin enlace en el panel desde 20-nov-2026 |
 | Panel: menú, agotados, fotos, datos y colores del restaurante | ✅ Fase 3 · `/panel/<slug>` |
-| Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · `/acceso/empleado?r=<slug>` |
+| Empleados con usuario y contraseña, permisos y desactivación | ✅ Fase 3 · sin enlace en el panel desde 20-nov-2026 |
 
 ## Cómo se puso en marcha (ya hecho en el proyecto `uqwojpsvrfoqsfaldkhj`)
 

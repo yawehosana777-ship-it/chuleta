@@ -1,6 +1,6 @@
 # Plataforma de menús digitales multi-restaurante — Plan técnico
 
-> Estado: **Las 8 fases están aprobadas** (Fases 1–7: 18-nov-2026; Fase 8: 20-nov-2026). Fase 7: 0 hallazgos graves (ver docs/informe-seguridad-fase-7.md). Sitio publicado en https://donchuleta.netlify.app. El 20-nov-2026 el dueño cambió a pedidos por WhatsApp (enlace wa.me, sin API): el panel queda para menú, precios, fotos y mesas/QR (Cocina y Promociones quitadas del panel el mismo día). Guía de entrega: docs/guia-dueno-don-chuleta.md.
+> Estado: **Las 8 fases están aprobadas** (Fases 1–7: 18-nov-2026; Fase 8: 20-nov-2026). Fase 7: 0 hallazgos graves (ver docs/informe-seguridad-fase-7.md). Sitio publicado en https://donchuleta.netlify.app. El 20-nov-2026 el dueño cambió a pedidos por WhatsApp (enlace wa.me, sin API): el panel queda para menú, precios, fotos y mesas/QR (Cocina, Promociones y Empleados quitados del panel el mismo día). Guía de entrega: docs/guia-dueno-don-chuleta.md.
 > Lighthouse móvil (versión de producción en localhost): Accesibilidad 100, Buenas prácticas 100, SEO 100; Rendimiento 89–90 en modo simulado y 91–92 con limitación real de red/CPU. Ver `plataforma/README.md`.
 > La demo de Don Chuleta se conserva sin cambios en `demo/` como referencia visual.
 

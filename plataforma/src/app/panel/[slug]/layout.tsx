@@ -14,7 +14,7 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
   const { ctx } = await contextoPagina(slug);
   await exigirContrasenaPropia(ctx.supabase, ctx.usuarioId);
 
-  // Cocina y Promociones no se usan en este menú (decisión del dueño, 20-nov-2026): sus páginas siguen guardadas pero sin enlace.
+  // Cocina, Promociones y Empleados no se usan en este menú (decisión del dueño, 20-nov-2026): sus páginas siguen guardadas pero sin enlace.
   // Con pedidos por WhatsApp, también se ocultan Pedidos e Informes.
   const pedidos = !ctx.porWhatsApp && ctx.puede("orders.view");
   const secciones = [
@@ -23,7 +23,6 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
     ctx.puede("menu.edit") && { ruta: "menu", nombre: "Menú" },
     !ctx.porWhatsApp && ctx.puede("reports.view") && { ruta: "informes", nombre: "Informes" },
     ctx.puede("settings.edit") && { ruta: "restaurante", nombre: "Restaurante" },
-    ctx.puede("staff.manage") && { ruta: "empleados", nombre: "Empleados" },
   ].filter((s): s is { ruta: string; nombre: string } => Boolean(s));
 
   return (
