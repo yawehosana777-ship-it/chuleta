@@ -21,8 +21,13 @@ export function FormularioRestaurante({ slug, r }: { slug: string; r: DatosResta
       <Campo etiqueta="Dirección" name="direccion" maxLength={300} defaultValue={r.address ?? ""} error={e?.direccion} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Campo etiqueta="Teléfono" name="telefono" type="tel" maxLength={30} defaultValue={r.phone ?? ""} error={e?.telefono} />
-        <Campo etiqueta="WhatsApp" name="whatsapp" type="tel" maxLength={30} defaultValue={r.whatsapp ?? ""} error={e?.whatsapp} />
+        <Campo etiqueta="WhatsApp para pedidos" name="whatsapp" type="tel" maxLength={30} placeholder="5555-1234"
+          defaultValue={r.whatsapp ?? ""} error={e?.whatsapp} />
       </div>
+      <p className="-mt-2 text-xs text-tenue">
+        Con un número de WhatsApp, el menú muestra el botón «Pedir por WhatsApp»: el cliente envía su pedido ya escrito a ese número.
+        Si lo dejas vacío, se usa el sistema de pedidos del panel.
+      </p>
       <Campo etiqueta="Lema" name="lema" maxLength={80} defaultValue={r.lema} placeholder="Ej. Al gusto de nuestros clientes" error={e?.lema} />
       <Campo etiqueta="Especialidades (separadas por coma)" name="etiquetas" defaultValue={r.etiquetas.join(", ")}
         placeholder="Carnes, Hamburguesas, Cervezas" error={e?.etiquetas} />

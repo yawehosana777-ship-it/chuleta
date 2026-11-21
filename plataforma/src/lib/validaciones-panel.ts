@@ -5,6 +5,7 @@ import { PERMISOS_PERSONAL, USUARIO_VALIDO } from "./permisos";
 import { ICONOS } from "./menu/tipos";
 import { esquemaContrasena } from "./validaciones";
 import { PLANTILLAS, type NombrePlantilla } from "./menu/temas";
+import { numeroWhatsApp } from "./menu/whatsapp";
 
 const textoOpcional = (max: number) =>
   z.string().trim().max(max, `Máximo ${max} caracteres.`).transform((v) => (v === "" ? null : v)).nullable().catch(null);
@@ -67,7 +68,8 @@ export const esquemaRestaurante = z.object({
   descripcion: textoOpcional(1000),
   direccion: textoOpcional(300),
   telefono: textoOpcional(30),
-  whatsapp: textoOpcional(30),
+  // Con número, el menú muestra "Pedir por WhatsApp". Vacío = sin WhatsApp.
+  whatsapp: textoOpcional(30).refine((v) => v === null || numeroWhatsApp(v) !== null, "Escribe un número de WhatsApp válido, por ejemplo 5555-1234."),
   plantilla: z.enum(Object.keys(PLANTILLAS) as [NombrePlantilla, ...NombrePlantilla[]]).catch("parrilla"),
   lema: textoOpcional(80),
   etiquetas: z

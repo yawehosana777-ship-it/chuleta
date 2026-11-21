@@ -14,13 +14,15 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
   const { ctx } = await contextoPagina(slug);
   await exigirContrasenaPropia(ctx.supabase, ctx.usuarioId);
 
+  // Con pedidos por WhatsApp, Pedidos, Cocina e Informes se ocultan (siguen guardados por si se vuelven a usar).
+  const pedidos = !ctx.porWhatsApp && ctx.puede("orders.view");
   const secciones = [
-    ctx.puede("orders.view") && { ruta: "pedidos", nombre: "Pedidos" },
-    ctx.puede("orders.view") && { ruta: "cocina", nombre: "Cocina" },
+    pedidos && { ruta: "pedidos", nombre: "Pedidos" },
+    pedidos && { ruta: "cocina", nombre: "Cocina" },
     ctx.puede("tables.manage") && { ruta: "mesas", nombre: "Mesas" },
     ctx.puede("menu.edit") && { ruta: "menu", nombre: "Menú" },
     ctx.puede("menu.edit") && { ruta: "promociones", nombre: "Promociones" },
-    ctx.puede("reports.view") && { ruta: "informes", nombre: "Informes" },
+    !ctx.porWhatsApp && ctx.puede("reports.view") && { ruta: "informes", nombre: "Informes" },
     ctx.puede("settings.edit") && { ruta: "restaurante", nombre: "Restaurante" },
     ctx.puede("staff.manage") && { ruta: "empleados", nombre: "Empleados" },
   ].filter((s): s is { ruta: string; nombre: string } => Boolean(s));
@@ -45,7 +47,7 @@ export default async function LayoutRestaurante({ children, params }: LayoutProp
             </form>
           </div>
         </div>
-        {ctx.puede("orders.view") && <AlertaPedidos slug={slug} restauranteId={ctx.restaurante.id} />}
+        {pedidos && <AlertaPedidos slug={slug} restauranteId={ctx.restaurante.id} />}
         {secciones.length > 0 && <Navegacion slug={slug} secciones={secciones} />}
       </header>
       <div className="pt-6">

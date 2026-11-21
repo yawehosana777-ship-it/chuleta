@@ -5,6 +5,7 @@ import { urlImagen } from "./imagenes";
 import { descuentoUnitario, type FilaPromocion } from "./promociones";
 import { leerTema } from "./temas";
 import { ICONOS, type Categoria, type Icono, type MenuPublico } from "./tipos";
+import { numeroWhatsApp } from "./whatsapp";
 
 type ConPosicion = { position: number };
 
@@ -14,6 +15,7 @@ export type FilaRestaurante = {
   description: string | null;
   address: string | null;
   phone: string | null;
+  whatsapp?: string | null;
   currency: string;
   logo_path: string | null;
   cover_path: string | null;
@@ -111,6 +113,7 @@ export function armarMenu(r: FilaRestaurante, filas: FilaCategoria[], urlSupabas
       descripcion: r.description,
       direccion: r.address,
       telefono: r.phone,
+      whatsapp: numeroWhatsApp(r.whatsapp),
       moneda: r.currency,
       logo: urlImagen(r.logo_path, urlSupabase),
       portada: urlImagen(r.cover_path, urlSupabase),

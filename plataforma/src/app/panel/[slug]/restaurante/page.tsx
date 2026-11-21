@@ -65,16 +65,22 @@ export default async function PaginaRestaurante({ params }: PageProps<"/panel/[s
         resalte: tema.colores.resalte !== base.resalte ? tema.colores.resalte : "",
       }} />
       <section className="rounded-2xl border border-linea bg-superficie p-4" aria-labelledby="t-servicio">
-        <h2 id="t-servicio" className="mb-4 font-semibold">Pedidos y horario</h2>
+        <h2 id="t-servicio" className="mb-4 font-semibold">{ctx.porWhatsApp ? "Entrega a domicilio" : "Pedidos y horario"}</h2>
+        {ctx.porWhatsApp && (
+          <p className="-mt-2 mb-4 text-xs text-tenue">
+            Los pedidos llegan por WhatsApp. Aquí solo cuenta «Domicilio»: si está activo, el cliente puede elegir entrega a domicilio
+            (con la zona y el costo que escribas). Pedidos en mesa y horario no se usan mientras haya número de WhatsApp.
+          </p>
+        )}
         <FormularioServicio slug={slug} mesa={r.dine_in_enabled} horario={horario} domicilio={{
           activo: r.delivery_enabled, zona: entrega?.area_note ?? "", envio: monto(entrega?.fixed_fee_cents), minimo: monto(entrega?.min_order_cents),
         }} />
       </section>
-      <section className="rounded-2xl border border-linea bg-superficie p-4" aria-labelledby="t-operacion">
+      {!ctx.porWhatsApp && <section className="rounded-2xl border border-linea bg-superficie p-4" aria-labelledby="t-operacion">
         <h2 id="t-operacion" className="mb-4 font-semibold">Áreas y avisos</h2>
         <SeccionOperacion slug={slug} areas={areas ?? []} categorias={categorias ?? []}
           aceptar={r.alert_accept_minutes} preparar={r.alert_ready_minutes} />
-      </section>
+      </section>}
     </div>
   );
 }

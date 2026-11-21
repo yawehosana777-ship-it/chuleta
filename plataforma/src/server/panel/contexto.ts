@@ -1,6 +1,7 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
+import { numeroWhatsApp } from "@/lib/menu/whatsapp";
 import { permisosEfectivos, type Permiso, type Rol } from "@/lib/permisos";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -20,7 +21,7 @@ async function cargarContexto(slug: string) {
 
   const { data: m } = await supabase
     .from("memberships")
-    .select("id, role, restaurants!inner(id, slug, name, status), membership_permissions(permission)")
+    .select("id, role, restaurants!inner(id, slug, name, status, whatsapp), membership_permissions(permission)")
     .eq("user_id", auth.user.id)
     .eq("active", true)
     .eq("restaurants.slug", slug)
@@ -28,7 +29,7 @@ async function cargarContexto(slug: string) {
     .maybeSingle<{
       id: string;
       role: Rol;
-      restaurants: { id: string; slug: string; name: string; status: string };
+      restaurants: { id: string; slug: string; name: string; status: string; whatsapp: string | null };
       membership_permissions: { permission: string }[];
     }>();
   if (!m) return null;
@@ -42,6 +43,8 @@ async function cargarContexto(slug: string) {
     permisos,
     restaurante: m.restaurants,
     puede: (p: Permiso) => permisos.has(p),
+    /** Con número de WhatsApp, los clientes piden por WhatsApp y el sistema de pedidos del panel se oculta. */
+    porWhatsApp: numeroWhatsApp(m.restaurants.whatsapp) !== null,
   };
 }
 

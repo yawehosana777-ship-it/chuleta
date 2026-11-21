@@ -35,7 +35,7 @@ export async function obtenerMenuPublico(slug: string): Promise<MenuPublico | nu
 
   const { data: restaurante, error } = await supabase
     .from("restaurants")
-    .select("id, slug, name, description, address, phone, currency, logo_path, cover_path, theme, delivery_enabled, delivery_settings(method, fixed_fee_cents, min_order_cents, area_note)")
+    .select("id, slug, name, description, address, phone, whatsapp, currency, logo_path, cover_path, theme, delivery_enabled, delivery_settings(method, fixed_fee_cents, min_order_cents, area_note)")
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();

@@ -11,6 +11,7 @@ import {
   sePuedePedir, totalArticulos, totalCarrito, type Eleccion, type LineaCarrito,
 } from "@/lib/menu/carrito";
 import type { Categoria, Domicilio, MesaCliente, Producto, Restaurante } from "@/lib/menu/tipos";
+import { enlaceWhatsApp, mensajePedido } from "@/lib/menu/whatsapp";
 import { MENSAJE_MESA } from "@/lib/pedidos-textos";
 import {
   IconoBasura, IconoBolsa, IconoBuscar, IconoCategoria, IconoCerrar, IconoCheck, IconoInfo, IconoMas, IconoReloj,
@@ -56,6 +57,8 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
   const [abierto, setAbierto] = useState<Abierto>(null);
   const [pedidoAbierto, setPedidoAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Con número de WhatsApp, los pedidos se hacen por WhatsApp (el sistema de pedidos del panel queda apagado).
+  const porWhatsApp = Boolean(restaurante.whatsapp);
   const chipsRef = useRef<HTMLUListElement>(null);
 
   // Búsqueda sin acentos ni mayúsculas, por nombre de producto o categoría.
@@ -222,7 +225,10 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
         <p>{[restaurante.tema.lema, restaurante.direccion].filter(Boolean).join(" · ")}</p>
         {restaurante.telefono && <p>Teléfono: <a href={`tel:${restaurante.telefono.replace(/[^\d+]/g, "")}`}>{restaurante.telefono}</a></p>}
         <div className={s.aviso}>
-          {mesa ? (
+          {porWhatsApp ? (
+            <><b>Pide por WhatsApp.</b> Elige tus platillos y toca «Pedir por WhatsApp»: tu pedido llega ya escrito al restaurante{mesa && ` (${mesa.etiqueta})`}.
+              Pagas en efectivo.</>
+          ) : mesa ? (
             mesa.estado === "abierto"
               ? <><b>Pide desde tu teléfono.</b> Tu pedido llega directo al restaurante ({mesa.etiqueta}). El pago es en efectivo, con tu mesero, al terminar.</>
               : MENSAJE_MESA[mesa.estado]
@@ -246,14 +252,15 @@ export function MenuInteractivo({ restaurante, categorias, mesa }: { restaurante
       )}
 
       {abierto && (
-        <HojaProducto key={abierto.producto.id} {...abierto} Q={Q} conNota={mesa ? mesa.estado === "abierto" : Boolean(restaurante.domicilio)}
+        <HojaProducto key={abierto.producto.id} {...abierto} Q={Q} conNota={porWhatsApp || (mesa ? mesa.estado === "abierto" : Boolean(restaurante.domicilio))}
           onCerrar={() => setAbierto(null)} onAgregar={agregar} />
       )}
       {pedidoAbierto && (
         <HojaPedido lineas={lineas} Q={Q} iconoDe={iconoDe} imagenDe={imagenDe} onCerrar={() => setPedidoAbierto(false)}
           onCambiar={(c, d) => setLineas((ls) => cambiarCantidad(ls, c, d))} onVaciar={() => setLineas(() => [])}
           mesa={mesa} clave={clave} onEnviado={() => setLineasBase([])}
-          slug={restaurante.slug} domicilio={mesa ? null : restaurante.domicilio} />
+          slug={restaurante.slug} domicilio={mesa ? null : restaurante.domicilio}
+          whatsapp={restaurante.whatsapp ? { numero: restaurante.whatsapp, restaurante: restaurante.nombre, moneda: restaurante.moneda } : null} />
       )}
 
       {aviso && (
@@ -393,20 +400,22 @@ function HojaProducto({ producto: p, categoria, Q, conNota, onCerrar, onAgregar 
   );
 }
 
-function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVaciar, mesa, clave, onEnviado, slug, domicilio }: {
+function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVaciar, mesa, clave, onEnviado, slug, domicilio, whatsapp }: {
   lineas: LineaCarrito[]; Q: Formato; iconoDe: (id: string) => Categoria["icono"]; imagenDe: (id: string) => string | null;
   onCerrar: () => void; onCambiar: (clave: string, delta: number) => void; onVaciar: () => void;
   mesa?: MesaCliente; clave: string; onEnviado: () => void; slug: string; domicilio: Domicilio | null;
+  whatsapp: DatosWhatsApp | null;
 }) {
   const { ref, alTocar, cerrar } = useDialogo(onCerrar);
   const [resumen, setResumen] = useState(false);
   const [enviar, setEnviar] = useState(false);
   const [aDomicilio, setADomicilio] = useState(false);
+  const [aWhatsApp, setAWhatsApp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enviando, iniciar] = useTransition();
   const router = useRouter();
   const total = totalCarrito(lineas);
-  const puedePedir = mesa?.estado === "abierto";
+  const puedePedir = !whatsapp && mesa?.estado === "abierto";
 
   function mandar(datos: FormData) {
     if (!mesa || enviando) return;
@@ -427,7 +436,9 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
       <div className={s.asa} />
       <button type="button" className={s.cerrar} onClick={cerrar} aria-label="Cerrar"><IconoCerrar /></button>
 
-      {aDomicilio && domicilio ? (
+      {aWhatsApp && whatsapp ? (
+        <FormularioWhatsApp lineas={lineas} Q={Q} datos={whatsapp} mesa={mesa?.etiqueta} domicilio={domicilio} onVolver={() => setAWhatsApp(false)} />
+      ) : aDomicilio && domicilio ? (
         <FormularioDomicilio lineas={lineas} Q={Q} domicilio={domicilio} slug={slug} clave={clave}
           onVolver={() => setADomicilio(false)} onEnviado={onEnviado} />
       ) : enviar && mesa ? (
@@ -530,14 +541,19 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
             </div>
             <p className={s.notaPedido}>
               <IconoInfo size={15} />
-              {puedePedir ? "Revisa tu pedido y envíalo: llega directo al restaurante."
+              {whatsapp ? "Revisa tu pedido y envíalo por WhatsApp: llega ya escrito al restaurante."
+                : puedePedir ? "Revisa tu pedido y envíalo: llega directo al restaurante."
                 : mesa ? MENSAJE_MESA[mesa.estado as Exclude<MesaCliente["estado"], "abierto">]
                 : domicilio ? `Pídelo a domicilio (entrega ${domicilio.envio ? `por ${Q(domicilio.envio)}` : "gratis"}). Si estás en el restaurante, escanea el QR de tu mesa.`
                 : "Para pedir desde tu teléfono, escanea el código QR de tu mesa. Aquí puedes mostrarle el resumen a tu mesero."}
             </p>
           </div>
           <div className={s.hojaPie}>
-            {puedePedir ? (
+            {whatsapp ? (
+              <button type="button" className={s.botonPrincipal} onClick={() => setAWhatsApp(true)}>
+                <span>Continuar</span><span className={s.num}>{Q(total)}</span>
+              </button>
+            ) : puedePedir ? (
               <button type="button" className={s.botonPrincipal} onClick={() => { setError(null); setEnviar(true); }}>
                 <span>Continuar</span><span className={s.num}>{Q(total)}</span>
               </button>
@@ -557,6 +573,98 @@ function HojaPedido({ lineas, Q, iconoDe, imagenDe, onCerrar, onCambiar, onVacia
         </>
       )}
     </dialog>
+  );
+}
+
+// ---------- WhatsApp ----------
+type DatosWhatsApp = { numero: string; restaurante: string; moneda: string };
+
+/**
+ * Arma el mensaje del pedido y abre WhatsApp: el cliente lo envía desde su teléfono.
+ * La página no guarda ni envía el pedido.
+ */
+function FormularioWhatsApp({ lineas, Q, datos, mesa, domicilio, onVolver }: {
+  lineas: LineaCarrito[]; Q: Formato; datos: DatosWhatsApp; mesa?: string; domicilio: Domicilio | null; onVolver: () => void;
+}) {
+  const [previos] = useState(leerDatosCliente);
+  const [entrega, setEntrega] = useState<"llevar" | "domicilio">("llevar");
+  const [error, setError] = useState<string | null>(null);
+  const total = totalCarrito(lineas);
+
+  function abrir(form: FormData) {
+    const texto = (k: string) => String(form.get(k) ?? "").trim();
+    const direccion = texto("direccion");
+    if (!mesa && entrega === "domicilio" && direccion.length < 5) { setError("Escribe tu dirección para la entrega."); return; }
+    setError(null);
+    const nombre = texto("nombre");
+    // Solo en su teléfono, para no escribirlos cada vez.
+    try {
+      localStorage.setItem(GUARDADO, JSON.stringify({ ...previos, nombre, ...(direccion ? { direccion } : {}) }));
+    } catch { /* sin almacenamiento: no pasa nada */ }
+    const mensaje = mensajePedido({
+      restaurante: datos.restaurante, moneda: datos.moneda, lineas, mesa, nombre, notas: texto("notas"),
+      entrega: mesa ? undefined : entrega === "domicilio" ? { tipo: "domicilio", direccion } : { tipo: "llevar" },
+    });
+    window.location.href = enlaceWhatsApp(datos.numero, mensaje);
+  }
+
+  return (
+    <form action={abrir} className="contents" noValidate>
+      <div className={s.hojaDesplazable}>
+        <div className={s.pedidoCabecera}><h2>{mesa ? `Pedir para ${mesa}` : "Pedir por WhatsApp"}</h2></div>
+        <div className={s.recibo}>
+          {lineas.map((l) => (
+            <div key={l.clave} className={s.fila}>
+              <span>
+                {l.cantidad} × {l.nombre}{l.detalle.length > 0 && ` (${l.detalle.join(", ")})`}
+                {l.nota && <span className={s.lineaNota}>“{l.nota}”</span>}
+              </span>
+              <span>{Q(l.cantidad * l.precioUnitario)}</span>
+            </div>
+          ))}
+          <div className={`${s.fila} ${s.filaTotal}`}><span>Total</span><span>{Q(total)}</span></div>
+        </div>
+        <div className={s.formEnvio}>
+          <Campo nombre="nombre" etiqueta="Tu nombre" ayuda="opcional">
+            <input id="d-nombre" name="nombre" maxLength={60} autoComplete="given-name" defaultValue={previos.nombre} />
+          </Campo>
+          {!mesa && (
+            <fieldset className={s.grupo}>
+              <legend>¿Cómo lo quieres?</legend>
+              <label className={s.opcion}>
+                Para llevar (lo recojo)
+                <input type="radio" name="entrega" checked={entrega === "llevar"} onChange={() => setEntrega("llevar")} />
+              </label>
+              {domicilio && (
+                <label className={s.opcion}>
+                  A domicilio{domicilio.zona && ` · ${domicilio.zona}`}
+                  <span className={s.opcionExtra}>{domicilio.envio ? Q(domicilio.envio) : "Gratis"}</span>
+                  <input type="radio" name="entrega" checked={entrega === "domicilio"} onChange={() => setEntrega("domicilio")} />
+                </label>
+              )}
+            </fieldset>
+          )}
+          {!mesa && entrega === "domicilio" && (
+            <Campo nombre="direccion" etiqueta="Dirección" error={error ?? undefined}>
+              <textarea id="d-direccion" name="direccion" rows={2} maxLength={300} autoComplete="street-address"
+                placeholder="Barrio, calle, número de casa y referencias" defaultValue={previos.direccion} />
+            </Campo>
+          )}
+          <Campo nombre="notas" etiqueta="Notas para el restaurante" ayuda="opcional">
+            <textarea id="d-notas" name="notas" rows={2} maxLength={400} placeholder="Ej. traer todo junto" />
+          </Campo>
+        </div>
+        <p className={s.notaPedido}>
+          <IconoInfo size={15} />Se abrirá WhatsApp con tu pedido ya escrito: solo toca enviar. El restaurante te confirma el precio final. Pago en efectivo.
+        </p>
+      </div>
+      <div className={s.hojaPie}>
+        <button type="button" className={s.vaciar} onClick={onVolver}>Volver</button>
+        <button type="submit" className={s.botonPrincipal}>
+          <span>Pedir por WhatsApp</span><span className={s.num}>{Q(total)}</span>
+        </button>
+      </div>
+    </form>
   );
 }
 

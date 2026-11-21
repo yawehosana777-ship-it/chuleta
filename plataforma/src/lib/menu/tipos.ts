@@ -37,6 +37,8 @@ export type Restaurante = {
   descripcion: string | null;
   direccion: string | null;
   telefono: string | null;
+  /** Número de WhatsApp listo para el enlace (con código de país). Con número, los pedidos se hacen por WhatsApp. */
+  whatsapp: string | null;
   moneda: string;
   logo: string | null;
   portada: string | null;
