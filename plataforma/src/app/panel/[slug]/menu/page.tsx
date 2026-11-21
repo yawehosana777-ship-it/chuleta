@@ -71,7 +71,7 @@ export default async function PaginaMenuPanel({ params }: PageProps<"/panel/[slu
               const foto = [...p.product_images].sort((a, b) => a.position - b.position).map((f) => urlImagen(f.storage_path, url)).find(Boolean);
               return (
                 <li key={p.id} className={`flex flex-wrap items-center gap-3 p-3 ${p.active ? "" : "opacity-60"}`}>
-                  <Link href={`/panel/${slug}/menu/producto/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                  <Link href={`/panel/${slug}/menu/producto/${p.id}`} className="flex min-w-48 flex-1 items-center gap-3">
                     <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-guinda/50 text-dorado-suave">
                       {foto ? <Image src={foto} alt="" fill sizes="48px" className="object-cover" /> : <IconoCategoria icono={icono(c.icon)} className="size-6" />}
                     </span>
