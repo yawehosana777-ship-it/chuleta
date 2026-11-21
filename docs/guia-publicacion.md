@@ -37,7 +37,8 @@ plataforma; las claves se pegan directamente en Netlify, nunca en un chat ni en 
 
 ## 4. Supabase en producción
 1. *Authentication → URL Configuration*: **Site URL** = la dirección final; en **Redirect URLs** agregar
-   `https://<dirección>/**`.
+   `https://<dirección>/**`. Solo se usa en correos (recuperar contraseña). **Pendiente** para Don Chuleta: hacerlo al
+   tener el dominio definitivo.
 2. Plan: el gratuito pausa el proyecto tras una semana sin uso y no ofrece copias restaurables desde el panel.
    Para operar con clientes reales se recomienda **Pro (~US$25/mes)**: copias diarias y sin pausas.
 3. **Probar la restauración** (obligatorio antes de dar por terminada la Fase 8): con el plan Pro,
