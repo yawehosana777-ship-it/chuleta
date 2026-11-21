@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import type { EstadoFormulario } from "@/lib/validaciones";
 
@@ -75,27 +76,52 @@ export function Resultado({ estado }: { estado: EstadoFormulario }) {
 
 const SIN_CONEXION = "No se pudo conectar. Revisa el internet e inténtalo de nuevo.";
 
+/**
+ * Pregunta "¿Seguro?" dentro de la página. No se usa window.confirm porque algunos
+ * navegadores (los de dentro de otras apps) no muestran esa ventana y la cancelan solos.
+ */
+export function Confirmacion({ pregunta, si = "Sí, borrar", onSi, onNo }: {
+  pregunta: string; si?: string; onSi: () => void; onNo: () => void;
+}) {
+  return (
+    <span role="alertdialog" aria-label={pregunta} className="flex flex-col gap-2 rounded-xl border border-red-400/40 bg-red-500/10 p-3">
+      <span className="text-sm text-crema">{pregunta}</span>
+      <span className="flex flex-wrap gap-2">
+        <button type="button" onClick={onSi} autoFocus
+          className="min-h-10 rounded-xl bg-red-600/90 px-4 text-sm font-bold text-white transition hover:bg-red-600">{si}</button>
+        <button type="button" onClick={onNo}
+          className="min-h-10 rounded-xl border border-linea bg-superficie-2 px-4 text-sm font-semibold">Cancelar</button>
+      </span>
+    </span>
+  );
+}
+
 /** Botón que ejecuta una acción del servidor (con confirmación opcional). */
 export function BotonAccion({ accion, children, confirmar, peligro, className = "" }: {
   accion: () => Promise<EstadoFormulario | void>; children: ReactNode; confirmar?: string; peligro?: boolean; className?: string;
 }) {
   const [pendiente, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [preguntando, setPreguntando] = useState(false);
+  const ejecutar = () => {
+    setPreguntando(false);
+    setError(null);
+    iniciar(async () => {
+      try {
+        const r = await accion();
+        if (r && r.error) setError(r.error);
+      } catch (e) {
+        // Al borrar, la acción lleva a otra página: eso no es un error de conexión.
+        unstable_rethrow(e);
+        setError(SIN_CONEXION);
+      }
+    });
+  };
+  if (preguntando && confirmar) return <Confirmacion pregunta={confirmar} onSi={ejecutar} onNo={() => setPreguntando(false)} />;
   return (
     <span className="inline-flex flex-col">
       <button type="button" disabled={pendiente} aria-busy={pendiente}
-        onClick={() => {
-          if (confirmar && !window.confirm(confirmar)) return;
-          setError(null);
-          iniciar(async () => {
-            try {
-              const r = await accion();
-              if (r && r.error) setError(r.error);
-            } catch {
-              setError(SIN_CONEXION);
-            }
-          });
-        }}
+        onClick={() => (confirmar ? setPreguntando(true) : ejecutar())}
         className={`min-h-10 rounded-xl border px-3 text-sm font-semibold transition disabled:opacity-50 ${
           peligro ? "border-red-400/40 text-red-200 hover:bg-red-500/10" : "border-linea bg-superficie-2 hover:border-dorado/40"
         } ${className}`}>

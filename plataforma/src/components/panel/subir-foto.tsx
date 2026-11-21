@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import type { EstadoFormulario } from "@/lib/validaciones";
-import { Resultado } from "./controles";
+import { Confirmacion, Resultado } from "./controles";
 
 const LADO_MAXIMO = 1600;
 
@@ -32,6 +32,7 @@ export function SubirFoto({ actual, etiqueta = "Foto", subir, quitar, alto = "h-
   const [vista, setVista] = useState<string | null>(null);
   const [estado, setEstado] = useState<EstadoFormulario>({});
   const [pendiente, iniciar] = useTransition();
+  const [preguntando, setPreguntando] = useState(false);
   const mostrar = vista ?? actual;
 
   function elegir(archivo: File | undefined) {
@@ -71,14 +72,17 @@ export function SubirFoto({ actual, etiqueta = "Foto", subir, quitar, alto = "h-
           className="min-h-10 rounded-xl border border-linea bg-superficie-2 px-4 text-sm font-semibold disabled:opacity-50">
           {mostrar ? "Cambiar foto" : "Subir foto"}
         </button>
-        {quitar && actual && (
-          <button type="button" disabled={pendiente}
-            onClick={() => { if (window.confirm("¿Quitar esta foto?")) iniciar(async () => { setVista(null); setEstado(await quitar()); }); }}
+        {quitar && actual && !preguntando && (
+          <button type="button" disabled={pendiente} onClick={() => setPreguntando(true)}
             className="min-h-10 rounded-xl border border-red-400/40 px-4 text-sm font-semibold text-red-200 disabled:opacity-50">
             Quitar
           </button>
         )}
       </div>
+      {quitar && preguntando && (
+        <Confirmacion pregunta="¿Quitar esta foto?" si="Sí, quitar" onNo={() => setPreguntando(false)}
+          onSi={() => { setPreguntando(false); iniciar(async () => { setVista(null); setEstado(await quitar()); }); }} />
+      )}
       <Resultado estado={estado} />
     </div>
   );
